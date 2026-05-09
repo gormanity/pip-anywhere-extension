@@ -1,0 +1,120 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Ultimate PiP Manual Test</title>
+    <style>
+      :root {
+        color-scheme: light dark;
+        font-family:
+          Inter,
+          ui-sans-serif,
+          system-ui,
+          -apple-system,
+          BlinkMacSystemFont,
+          "Segoe UI",
+          sans-serif;
+      }
+
+      body {
+        margin: 0;
+        background: Canvas;
+        color: CanvasText;
+      }
+
+      main {
+        width: min(1040px, calc(100vw - 32px));
+        margin: 32px auto;
+        display: grid;
+        gap: 28px;
+      }
+
+      h1,
+      h2 {
+        margin: 0;
+      }
+
+      p {
+        margin: 8px 0 0;
+        color: color-mix(in srgb, CanvasText 68%, Canvas);
+      }
+
+      section {
+        display: grid;
+        gap: 12px;
+      }
+
+      video,
+      iframe {
+        width: min(720px, 100%);
+        aspect-ratio: 16 / 9;
+        border: 1px solid color-mix(in srgb, CanvasText 18%, Canvas);
+        background: black;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <header>
+        <h1>Ultimate PiP Manual Test</h1>
+        <p>
+          Load a dev build, hover each video, and test the toolbar button and
+          keyboard command.
+        </p>
+      </header>
+
+      <section>
+        <h2>Normal video</h2>
+        <video
+          controls
+          muted
+          loop
+          src="https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4"
+        ></video>
+      </section>
+
+      <section>
+        <h2>Video with PiP disabled by markup and script</h2>
+        <video
+          id="blocked-video"
+          controls
+          muted
+          loop
+          disablepictureinpicture
+          controlslist="noremoteplayback noplaybackrate"
+          src="https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4"
+        ></video>
+      </section>
+
+      <section>
+        <h2>Same-origin iframe video</h2>
+        <iframe id="video-frame" title="Frame containing a video"></iframe>
+      </section>
+    </main>
+
+    <script>
+      const blocked = document.getElementById("blocked-video");
+      window.setInterval(() => {
+        blocked.disablePictureInPicture = true;
+        blocked.setAttribute("disablepictureinpicture", "");
+      }, 500);
+
+      const frame = document.getElementById("video-frame");
+      frame.srcdoc = `
+        <!doctype html>
+        <html lang="en">
+          <body style="margin:0;background:black">
+            <video
+              controls
+              muted
+              loop
+              style="width:100%;height:100%;display:block"
+              src="https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4"
+            ></video>
+          </body>
+        </html>
+      `;
+    </script>
+  </body>
+</html>
