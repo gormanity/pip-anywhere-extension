@@ -1,6 +1,8 @@
 import {
   DEFAULT_SETTINGS,
+  OVERLAY_CORNERS,
   loadSettings,
+  normalizeOverlayCorner,
   saveSettings,
   type PipSettings,
 } from "@/core/settings";
@@ -51,6 +53,11 @@ function readForm(): PipSettings {
     minimumOverlayDurationSeconds: Number(
       byId<HTMLInputElement>("minimum-overlay-duration").value,
     ),
+    overlayCorner: normalizeOverlayCorner(
+      byId<HTMLSelectElement>("overlay-corner").value,
+    ),
+    overlayOffsetX: Number(byId<HTMLInputElement>("overlay-offset-x").value),
+    overlayOffsetY: Number(byId<HTMLInputElement>("overlay-offset-y").value),
     unblockVideoPiP: byId<HTMLInputElement>("unblock-video-pip").checked,
     debugLogging: __DEV__
       ? byId<HTMLInputElement>("debug-logging").checked
@@ -71,6 +78,17 @@ function writeForm(settings: PipSettings): void {
   );
   byId<HTMLOutputElement>("minimum-overlay-duration-output").value =
     `${settings.minimumOverlayDurationSeconds} s`;
+  byId<HTMLSelectElement>("overlay-corner").value = settings.overlayCorner;
+  byId<HTMLInputElement>("overlay-offset-x").value = String(
+    settings.overlayOffsetX,
+  );
+  byId<HTMLOutputElement>("overlay-offset-x-output").value =
+    `${settings.overlayOffsetX} px`;
+  byId<HTMLInputElement>("overlay-offset-y").value = String(
+    settings.overlayOffsetY,
+  );
+  byId<HTMLOutputElement>("overlay-offset-y-output").value =
+    `${settings.overlayOffsetY} px`;
   byId<HTMLInputElement>("unblock-video-pip").checked =
     settings.unblockVideoPiP;
   if (__DEV__) {
@@ -89,6 +107,15 @@ function setStatus(text: string): void {
 async function init(): Promise<void> {
   updateShortcutText();
   initShortcutButton();
+  for (const corner of OVERLAY_CORNERS) {
+    const option = document.createElement("option");
+    option.value = corner;
+    option.textContent = corner
+      .split("-")
+      .map((part) => part[0].toUpperCase() + part.slice(1))
+      .join(" ");
+    byId<HTMLSelectElement>("overlay-corner").appendChild(option);
+  }
   byId<HTMLElement>("advanced-section").hidden = !__DEV__;
   writeForm(await loadSettings());
 
@@ -101,6 +128,18 @@ async function init(): Promise<void> {
   minimumDuration.addEventListener("input", () => {
     byId<HTMLOutputElement>("minimum-overlay-duration-output").value =
       `${minimumDuration.value} s`;
+  });
+
+  const offsetX = byId<HTMLInputElement>("overlay-offset-x");
+  offsetX.addEventListener("input", () => {
+    byId<HTMLOutputElement>("overlay-offset-x-output").value =
+      `${offsetX.value} px`;
+  });
+
+  const offsetY = byId<HTMLInputElement>("overlay-offset-y");
+  offsetY.addEventListener("input", () => {
+    byId<HTMLOutputElement>("overlay-offset-y-output").value =
+      `${offsetY.value} px`;
   });
 
   byId<HTMLFormElement>("options-form").addEventListener("submit", (event) => {

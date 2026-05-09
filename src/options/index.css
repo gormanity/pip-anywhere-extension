@@ -172,6 +172,10 @@ small {
   grid-template-columns: minmax(0, 1fr) minmax(240px, 340px);
 }
 
+.placement-row {
+  grid-template-columns: minmax(0, 1fr) minmax(300px, 390px);
+}
+
 .range-control,
 .shortcut-control {
   display: flex;
@@ -179,10 +183,43 @@ small {
   gap: 12px;
 }
 
+.placement-control {
+  display: grid;
+  gap: 12px;
+}
+
+.placement-control label {
+  display: grid;
+  grid-template-columns: 74px minmax(0, 1fr);
+  gap: 12px;
+  align-items: center;
+}
+
+.placement-control label > span {
+  color: var(--muted);
+  font-size: 0.82rem;
+  font-weight: 680;
+}
+
+.compact-range output {
+  width: 64px;
+}
+
 input[type="range"] {
   width: 100%;
   min-width: 0;
   accent-color: var(--primary);
+}
+
+select {
+  width: 100%;
+  min-height: 38px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--panel-muted);
+  color: var(--text);
+  padding: 0 10px;
+  font: inherit;
 }
 
 output {
@@ -238,7 +275,8 @@ output {
 .switch:focus-visible,
 button:focus-visible,
 input[type="text"]:focus-visible,
-input[type="range"]:focus-visible {
+input[type="range"]:focus-visible,
+select:focus-visible {
   outline: 3px solid color-mix(in srgb, var(--primary) 36%, transparent);
   outline-offset: 3px;
 }
@@ -349,10 +387,16 @@ button {
 
   .setting-row,
   .range-row,
+  .placement-row,
   .shortcut-row {
     grid-template-columns: 1fr;
     gap: 14px;
     align-items: start;
+  }
+
+  .placement-control label {
+    grid-template-columns: 1fr;
+    gap: 8px;
   }
 
   .switch {

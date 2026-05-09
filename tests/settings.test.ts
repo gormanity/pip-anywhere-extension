@@ -1,8 +1,10 @@
 import { describe, expect, it } from "vitest";
 import {
+  clampOverlayOffset,
   clampHoverDelay,
   clampMinimumOverlayDuration,
   DEFAULT_SETTINGS,
+  normalizeOverlayCorner,
   normalizeSettings,
 } from "@/core/settings";
 
@@ -23,12 +25,25 @@ describe("settings normalization", () => {
     expect(clampMinimumOverlayDuration("44.6")).toBe(45);
   });
 
+  it("normalizes overlay placement settings", () => {
+    expect(normalizeOverlayCorner("bottom-left")).toBe("bottom-left");
+    expect(normalizeOverlayCorner("center")).toBe(
+      DEFAULT_SETTINGS.overlayCorner,
+    );
+    expect(clampOverlayOffset(-1)).toBe(0);
+    expect(clampOverlayOffset(200)).toBe(160);
+    expect(clampOverlayOffset("24.4")).toBe(24);
+  });
+
   it("preserves valid boolean settings", () => {
     expect(
       normalizeSettings({
         hoverOverlayEnabled: false,
         hoverDelayMs: 100,
         minimumOverlayDurationSeconds: 30,
+        overlayCorner: "bottom-left",
+        overlayOffsetX: 24,
+        overlayOffsetY: 32,
         unblockVideoPiP: false,
         debugLogging: true,
       }),
@@ -36,6 +51,9 @@ describe("settings normalization", () => {
       hoverOverlayEnabled: false,
       hoverDelayMs: 100,
       minimumOverlayDurationSeconds: 30,
+      overlayCorner: "bottom-left",
+      overlayOffsetX: 24,
+      overlayOffsetY: 32,
       unblockVideoPiP: false,
       debugLogging: __DEV__,
     });

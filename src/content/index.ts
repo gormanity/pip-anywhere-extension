@@ -106,10 +106,20 @@ function positionOverlay(video: HTMLVideoElement): void {
     button.removeAttribute("data-visible");
     return;
   }
-  const top = Math.max(8, rect.top + 12);
-  const left = Math.max(8, rect.right - 54);
-  button.style.top = `${top}px`;
-  button.style.left = `${left}px`;
+  const buttonSize = 42;
+  const fromRight = settings.overlayCorner.endsWith("right");
+  const fromBottom = settings.overlayCorner.startsWith("bottom");
+  const top = fromBottom
+    ? rect.bottom - buttonSize - settings.overlayOffsetY
+    : rect.top + settings.overlayOffsetY;
+  const left = fromRight
+    ? rect.right - buttonSize - settings.overlayOffsetX
+    : rect.left + settings.overlayOffsetX;
+
+  const maxTop = window.innerHeight - buttonSize - 8;
+  const maxLeft = window.innerWidth - buttonSize - 8;
+  button.style.top = `${Math.min(maxTop, Math.max(8, top))}px`;
+  button.style.left = `${Math.min(maxLeft, Math.max(8, left))}px`;
 }
 
 function updateVisibleOverlayPosition(): void {

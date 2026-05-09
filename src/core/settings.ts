@@ -4,16 +4,30 @@ export interface PipSettings {
   hoverOverlayEnabled: boolean;
   hoverDelayMs: number;
   minimumOverlayDurationSeconds: number;
+  overlayCorner: OverlayCorner;
+  overlayOffsetX: number;
+  overlayOffsetY: number;
   unblockVideoPiP: boolean;
   debugLogging: boolean;
 }
 
 export const SETTINGS_KEY = "ultimatePip.settings";
+export const OVERLAY_CORNERS = [
+  "top-right",
+  "top-left",
+  "bottom-right",
+  "bottom-left",
+] as const;
+
+export type OverlayCorner = (typeof OVERLAY_CORNERS)[number];
 
 export const DEFAULT_SETTINGS: PipSettings = {
   hoverOverlayEnabled: true,
   hoverDelayMs: 250,
   minimumOverlayDurationSeconds: 45,
+  overlayCorner: "top-right",
+  overlayOffsetX: 12,
+  overlayOffsetY: 12,
   unblockVideoPiP: true,
   debugLogging: false,
 };
@@ -30,6 +44,9 @@ export function normalizeSettings(input: unknown): PipSettings {
     minimumOverlayDurationSeconds: clampMinimumOverlayDuration(
       candidate.minimumOverlayDurationSeconds,
     ),
+    overlayCorner: normalizeOverlayCorner(candidate.overlayCorner),
+    overlayOffsetX: clampOverlayOffset(candidate.overlayOffsetX),
+    overlayOffsetY: clampOverlayOffset(candidate.overlayOffsetY),
     unblockVideoPiP:
       typeof candidate.unblockVideoPiP === "boolean"
         ? candidate.unblockVideoPiP
@@ -54,6 +71,18 @@ export function clampMinimumOverlayDuration(value: unknown): number {
     return DEFAULT_SETTINGS.minimumOverlayDurationSeconds;
   }
   return Math.min(600, Math.max(0, Math.round(numeric)));
+}
+
+export function clampOverlayOffset(value: unknown): number {
+  const numeric = Number(value);
+  if (!Number.isFinite(numeric)) return 12;
+  return Math.min(160, Math.max(0, Math.round(numeric)));
+}
+
+export function normalizeOverlayCorner(value: unknown): OverlayCorner {
+  return OVERLAY_CORNERS.includes(value as OverlayCorner)
+    ? (value as OverlayCorner)
+    : DEFAULT_SETTINGS.overlayCorner;
 }
 
 export async function loadSettings(): Promise<PipSettings> {

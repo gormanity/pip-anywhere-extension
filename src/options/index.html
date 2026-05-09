@@ -92,6 +92,48 @@
             </div>
           </label>
 
+          <div class="setting-row placement-row">
+            <span class="setting-copy">
+              <strong>Overlay placement</strong>
+              <small
+                >Choose the hover button corner and distance from the
+                edge.</small
+              >
+            </span>
+            <div class="placement-control">
+              <label>
+                <span>Corner</span>
+                <select id="overlay-corner"></select>
+              </label>
+              <label>
+                <span>X offset</span>
+                <div class="range-control compact-range">
+                  <input
+                    id="overlay-offset-x"
+                    type="range"
+                    min="0"
+                    max="96"
+                    step="1"
+                  />
+                  <output id="overlay-offset-x-output"></output>
+                </div>
+              </label>
+              <label>
+                <span>Y offset</span>
+                <div class="range-control compact-range">
+                  <input
+                    id="overlay-offset-y"
+                    type="range"
+                    min="0"
+                    max="96"
+                    step="1"
+                  />
+                  <output id="overlay-offset-y-output"></output>
+                </div>
+              </label>
+            </div>
+          </div>
+
           <label class="setting-row">
             <span class="setting-copy">
               <strong>Unblock video PiP</strong>
