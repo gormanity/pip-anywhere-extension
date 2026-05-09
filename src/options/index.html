@@ -8,67 +8,137 @@
   </head>
   <body>
     <main>
-      <header>
-        <h1>Ultimate PiP</h1>
-        <p>Configure picture-in-picture behavior for HTML5 video.</p>
+      <header class="page-header">
+        <div class="brand-mark" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none">
+            <rect
+              x="3"
+              y="5"
+              width="18"
+              height="14"
+              rx="2.5"
+              stroke="currentColor"
+              stroke-width="2"
+            />
+            <rect
+              x="12"
+              y="11"
+              width="7"
+              height="5"
+              rx="1"
+              fill="currentColor"
+            />
+          </svg>
+        </div>
+        <div>
+          <p class="eyebrow">Extension Settings</p>
+          <h1>Ultimate PiP</h1>
+        </div>
       </header>
 
-      <form id="options-form">
-        <label class="row">
-          <span>
-            <strong>Hover overlay</strong>
-            <small>Show a PiP button over video elements.</small>
-          </span>
-          <input id="hover-overlay-enabled" type="checkbox" />
-        </label>
+      <form id="options-form" class="settings-panel">
+        <section class="settings-section" aria-labelledby="behavior-heading">
+          <div class="section-heading">
+            <h2 id="behavior-heading">Behavior</h2>
+          </div>
 
-        <label class="field">
-          <span>
-            <strong>Hover delay</strong>
-            <small>Delay before the overlay appears.</small>
-          </span>
-          <input
-            id="hover-delay-ms"
-            type="range"
-            min="0"
-            max="2000"
-            step="50"
-          />
-          <output id="hover-delay-output"></output>
-        </label>
+          <label class="setting-row">
+            <span class="setting-copy">
+              <strong>Hover overlay</strong>
+              <small>Show a PiP button over video elements.</small>
+            </span>
+            <input
+              id="hover-overlay-enabled"
+              class="switch"
+              type="checkbox"
+              role="switch"
+            />
+          </label>
 
-        <label class="row">
-          <span>
-            <strong>Unblock video PiP</strong>
-            <small>Clear video-level PiP blocks when possible.</small>
-          </span>
-          <input id="unblock-video-pip" type="checkbox" />
-        </label>
+          <label class="setting-row range-row">
+            <span class="setting-copy">
+              <strong>Hover delay</strong>
+              <small>Delay before the overlay appears.</small>
+            </span>
+            <div class="range-control">
+              <input
+                id="hover-delay-ms"
+                type="range"
+                min="0"
+                max="2000"
+                step="50"
+              />
+              <output id="hover-delay-output"></output>
+            </div>
+          </label>
 
-        <div class="field shortcut-field">
-          <span>
-            <strong>Keyboard shortcut</strong>
-            <small
-              >Browser-managed shortcuts are configured in extension
-              settings.</small
-            >
-          </span>
-          <input id="shortcut" type="text" readonly />
-          <button id="manage-shortcut" type="button">Manage</button>
-        </div>
+          <label class="setting-row">
+            <span class="setting-copy">
+              <strong>Unblock video PiP</strong>
+              <small>Clear video-level PiP blocks when possible.</small>
+            </span>
+            <input
+              id="unblock-video-pip"
+              class="switch"
+              type="checkbox"
+              role="switch"
+            />
+          </label>
+        </section>
 
-        <label class="row">
-          <span>
-            <strong>Debug logging</strong>
-            <small>Log PiP decisions to the page console.</small>
-          </span>
-          <input id="debug-logging" type="checkbox" />
-        </label>
+        <section class="settings-section" aria-labelledby="controls-heading">
+          <div class="section-heading">
+            <h2 id="controls-heading">Controls</h2>
+          </div>
 
-        <footer>
-          <button type="submit">Save</button>
-          <button id="reset" type="button">Restore Defaults</button>
-          <span id="status" role="status"></span>
+          <div class="setting-row shortcut-row">
+            <span class="setting-copy">
+              <strong>Keyboard shortcut</strong>
+              <small
+                >Browser-managed shortcuts are configured in extension
+                settings.</small
+              >
+            </span>
+            <div class="shortcut-control">
+              <input id="shortcut" type="text" readonly />
+              <button
+                id="manage-shortcut"
+                class="secondary-button"
+                type="button"
+              >
+                Manage
+              </button>
+            </div>
+          </div>
+        </section>
+
+        <section class="settings-section" aria-labelledby="advanced-heading">
+          <div class="section-heading">
+            <h2 id="advanced-heading">Advanced</h2>
+          </div>
+
+          <label class="setting-row">
+            <span class="setting-copy">
+              <strong>Debug logging</strong>
+              <small>Log PiP decisions to the page console.</small>
+            </span>
+            <input
+              id="debug-logging"
+              class="switch"
+              type="checkbox"
+              role="switch"
+            />
+          </label>
+        </section>
+
+        <footer class="action-bar">
+          <span id="status" role="status" aria-live="polite"></span>
+          <div class="actions">
+            <button id="reset" class="secondary-button" type="button">
+              Restore Defaults
+            </button>
+            <button class="primary-button" type="submit">Save</button>
+          </div>
         </footer>
       </form>
     </main>
