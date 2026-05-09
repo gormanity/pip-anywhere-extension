@@ -45,7 +45,7 @@
           <input id="unblock-video-pip" type="checkbox" />
         </label>
 
-        <label class="field">
+        <div class="field shortcut-field">
           <span>
             <strong>Keyboard shortcut</strong>
             <small
@@ -54,7 +54,8 @@
             >
           </span>
           <input id="shortcut" type="text" readonly />
-        </label>
+          <button id="manage-shortcut" type="button">Manage</button>
+        </div>
 
         <label class="row">
           <span>
@@ -66,7 +67,7 @@
 
         <footer>
           <button type="submit">Save</button>
-          <button id="reset" type="button">Reload Saved</button>
+          <button id="reset" type="button">Restore Defaults</button>
           <span id="status" role="status"></span>
         </footer>
       </form>

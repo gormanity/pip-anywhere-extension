@@ -54,13 +54,17 @@ form {
   grid-template-columns: 1fr minmax(180px, 260px) 72px;
 }
 
+.shortcut-field {
+  grid-template-columns: 1fr minmax(170px, 210px) auto;
+}
+
 span {
   display: grid;
   gap: 4px;
 }
 
 input[type="text"] {
-  width: 210px;
+  width: 100%;
   box-sizing: border-box;
   padding: 8px 10px;
   font: inherit;

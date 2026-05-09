@@ -1,4 +1,9 @@
-import { loadSettings, saveSettings, type PipSettings } from "@/core/settings";
+import {
+  DEFAULT_SETTINGS,
+  loadSettings,
+  saveSettings,
+  type PipSettings,
+} from "@/core/settings";
 import { getBrowserApi } from "@/core/browser";
 
 const COMMAND_NAME = "toggle-picture-in-picture";
@@ -16,6 +21,26 @@ function updateShortcutText(): void {
   const command = manifest.commands?.[COMMAND_NAME];
   const suggested = command?.suggested_key?.default ?? "Alt+Shift+P";
   shortcut.value = suggested;
+}
+
+function shortcutManagementUrl(): string | null {
+  if (__BROWSER__ === "chrome") return "chrome://extensions/shortcuts";
+  if (__BROWSER__ === "edge") return "edge://extensions/shortcuts";
+  if (__BROWSER__ === "firefox") return "about:addons";
+  return null;
+}
+
+function initShortcutButton(): void {
+  const button = byId<HTMLButtonElement>("manage-shortcut");
+  const url = shortcutManagementUrl();
+  if (!url) {
+    button.hidden = true;
+    return;
+  }
+
+  button.addEventListener("click", () => {
+    void api.tabs.create({ url });
+  });
 }
 
 function readForm(): PipSettings {
@@ -51,6 +76,7 @@ function setStatus(text: string): void {
 
 async function init(): Promise<void> {
   updateShortcutText();
+  initShortcutButton();
   writeForm(await loadSettings());
 
   const delay = byId<HTMLInputElement>("hover-delay-ms");
@@ -64,7 +90,10 @@ async function init(): Promise<void> {
   });
 
   byId<HTMLButtonElement>("reset").addEventListener("click", () => {
-    void loadSettings().then(writeForm);
+    writeForm(DEFAULT_SETTINGS);
+    void saveSettings(DEFAULT_SETTINGS).then(() =>
+      setStatus("Default settings restored."),
+    );
   });
 }
 
