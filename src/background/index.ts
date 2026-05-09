@@ -78,8 +78,11 @@ async function sendToggleToActiveTab(): Promise<void> {
   }
 }
 
-api.runtime.onInstalled.addListener(() => {
+api.runtime.onInstalled.addListener((details) => {
   void ensureDefaultSettings();
+  if (details.reason === "install") {
+    void api.runtime.openOptionsPage();
+  }
 });
 
 api.runtime.onStartup.addListener(() => {
