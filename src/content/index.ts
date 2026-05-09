@@ -130,8 +130,18 @@ function scheduleOverlayPositionUpdate(): void {
   );
 }
 
+function isVideoEligibleForOverlay(video: HTMLVideoElement): boolean {
+  const minimumSeconds = settings.minimumOverlayDurationSeconds;
+  if (minimumSeconds <= 0) return true;
+  if (video.duration === Infinity) return true;
+  if (!Number.isFinite(video.duration)) return false;
+  return video.duration >= minimumSeconds;
+}
+
 function showOverlay(video: HTMLVideoElement): void {
-  if (!settings.hoverOverlayEnabled) return;
+  if (!settings.hoverOverlayEnabled || !isVideoEligibleForOverlay(video)) {
+    return;
+  }
   overlayVideo = video;
   positionOverlay(video);
   getOverlay().dataset.visible = "true";
@@ -169,6 +179,9 @@ function observeVideo(video: HTMLVideoElement): void {
 
   video.addEventListener("mouseenter", () => scheduleOverlay(video));
   video.addEventListener("mousemove", scheduleOverlayPositionUpdate);
+  video.addEventListener("loadedmetadata", () => {
+    if (overlayVideo === video) showOverlay(video);
+  });
   video.addEventListener("mouseleave", () => {
     clearHoverTimer();
     hideOverlaySoon();

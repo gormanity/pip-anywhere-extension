@@ -48,6 +48,9 @@ function readForm(): PipSettings {
     hoverOverlayEnabled: byId<HTMLInputElement>("hover-overlay-enabled")
       .checked,
     hoverDelayMs: Number(byId<HTMLInputElement>("hover-delay-ms").value),
+    minimumOverlayDurationSeconds: Number(
+      byId<HTMLInputElement>("minimum-overlay-duration").value,
+    ),
     unblockVideoPiP: byId<HTMLInputElement>("unblock-video-pip").checked,
     debugLogging: __DEV__
       ? byId<HTMLInputElement>("debug-logging").checked
@@ -63,6 +66,11 @@ function writeForm(settings: PipSettings): void {
   );
   byId<HTMLOutputElement>("hover-delay-output").value =
     `${settings.hoverDelayMs} ms`;
+  byId<HTMLInputElement>("minimum-overlay-duration").value = String(
+    settings.minimumOverlayDurationSeconds,
+  );
+  byId<HTMLOutputElement>("minimum-overlay-duration-output").value =
+    `${settings.minimumOverlayDurationSeconds} s`;
   byId<HTMLInputElement>("unblock-video-pip").checked =
     settings.unblockVideoPiP;
   if (__DEV__) {
@@ -87,6 +95,12 @@ async function init(): Promise<void> {
   const delay = byId<HTMLInputElement>("hover-delay-ms");
   delay.addEventListener("input", () => {
     byId<HTMLOutputElement>("hover-delay-output").value = `${delay.value} ms`;
+  });
+
+  const minimumDuration = byId<HTMLInputElement>("minimum-overlay-duration");
+  minimumDuration.addEventListener("input", () => {
+    byId<HTMLOutputElement>("minimum-overlay-duration-output").value =
+      `${minimumDuration.value} s`;
   });
 
   byId<HTMLFormElement>("options-form").addEventListener("submit", (event) => {

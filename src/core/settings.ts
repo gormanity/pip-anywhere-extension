@@ -3,6 +3,7 @@ import { getBrowserApi } from "./browser";
 export interface PipSettings {
   hoverOverlayEnabled: boolean;
   hoverDelayMs: number;
+  minimumOverlayDurationSeconds: number;
   unblockVideoPiP: boolean;
   debugLogging: boolean;
 }
@@ -12,6 +13,7 @@ export const SETTINGS_KEY = "ultimatePip.settings";
 export const DEFAULT_SETTINGS: PipSettings = {
   hoverOverlayEnabled: true,
   hoverDelayMs: 250,
+  minimumOverlayDurationSeconds: 45,
   unblockVideoPiP: true,
   debugLogging: false,
 };
@@ -25,6 +27,9 @@ export function normalizeSettings(input: unknown): PipSettings {
         ? candidate.hoverOverlayEnabled
         : DEFAULT_SETTINGS.hoverOverlayEnabled,
     hoverDelayMs: clampHoverDelay(candidate.hoverDelayMs),
+    minimumOverlayDurationSeconds: clampMinimumOverlayDuration(
+      candidate.minimumOverlayDurationSeconds,
+    ),
     unblockVideoPiP:
       typeof candidate.unblockVideoPiP === "boolean"
         ? candidate.unblockVideoPiP
@@ -41,6 +46,14 @@ export function clampHoverDelay(value: unknown): number {
   const numeric = Number(value);
   if (!Number.isFinite(numeric)) return DEFAULT_SETTINGS.hoverDelayMs;
   return Math.min(2000, Math.max(0, Math.round(numeric)));
+}
+
+export function clampMinimumOverlayDuration(value: unknown): number {
+  const numeric = Number(value);
+  if (!Number.isFinite(numeric)) {
+    return DEFAULT_SETTINGS.minimumOverlayDurationSeconds;
+  }
+  return Math.min(600, Math.max(0, Math.round(numeric)));
 }
 
 export async function loadSettings(): Promise<PipSettings> {
