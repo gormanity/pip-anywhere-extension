@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Ultimate PiP Options</title>
+    <link rel="stylesheet" href="options.css" />
+  </head>
+  <body>
+    <main>
+      <header>
+        <h1>Ultimate PiP</h1>
+        <p>Configure picture-in-picture behavior for HTML5 video.</p>
+      </header>
+
+      <form id="options-form">
+        <label class="row">
+          <span>
+            <strong>Hover overlay</strong>
+            <small>Show a PiP button over video elements.</small>
+          </span>
+          <input id="hover-overlay-enabled" type="checkbox" />
+        </label>
+
+        <label class="field">
+          <span>
+            <strong>Hover delay</strong>
+            <small>Delay before the overlay appears.</small>
+          </span>
+          <input
+            id="hover-delay-ms"
+            type="range"
+            min="0"
+            max="2000"
+            step="50"
+          />
+          <output id="hover-delay-output"></output>
+        </label>
+
+        <label class="row">
+          <span>
+            <strong>Unblock video PiP</strong>
+            <small>Clear video-level PiP blocks when possible.</small>
+          </span>
+          <input id="unblock-video-pip" type="checkbox" />
+        </label>
+
+        <label class="field">
+          <span>
+            <strong>Keyboard shortcut</strong>
+            <small
+              >Browser-managed shortcuts are configured in extension
+              settings.</small
+            >
+          </span>
+          <input id="shortcut" type="text" readonly />
+        </label>
+
+        <label class="row">
+          <span>
+            <strong>Debug logging</strong>
+            <small>Log PiP decisions to the page console.</small>
+          </span>
+          <input id="debug-logging" type="checkbox" />
+        </label>
+
+        <footer>
+          <button type="submit">Save</button>
+          <button id="reset" type="button">Reload Saved</button>
+          <span id="status" role="status"></span>
+        </footer>
+      </form>
+    </main>
+    <script type="module" src="options.js"></script>
+  </body>
+</html>
