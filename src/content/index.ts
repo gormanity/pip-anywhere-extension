@@ -206,9 +206,10 @@ function handleMutations(mutations: MutationRecord[]): void {
   }
 }
 
-async function triggerPiP(video: HTMLVideoElement | null): Promise<void> {
+async function triggerPiP(video: HTMLVideoElement | null) {
   const result = await togglePictureInPicture(video);
   if (!result.ok) log("PiP request failed", result);
+  return result;
 }
 
 async function init(): Promise<void> {
@@ -243,7 +244,7 @@ async function init(): Promise<void> {
 
   api.runtime.onMessage.addListener((message, _sender, sendResponse) => {
     if (message?.type !== "ultimate-pip.toggle") return false;
-    void triggerPiP(findBestVideo()).then(() => sendResponse({ ok: true }));
+    void triggerPiP(findBestVideo()).then(sendResponse);
     return true;
   });
 }
