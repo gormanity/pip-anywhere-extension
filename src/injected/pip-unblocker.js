@@ -12,6 +12,14 @@
     }
   }
 
+  function emitDiagnostic(type, detail = {}) {
+    window.dispatchEvent(
+      new CustomEvent("ultimate-pip.diagnostic", {
+        detail: { type, ...detail },
+      }),
+    );
+  }
+
   function cleanVideo(video) {
     if (!(video instanceof HTMLVideoElement)) return;
 
@@ -27,6 +35,7 @@
 
     video.removeAttribute("disablepictureinpicture");
     video.removeAttribute("controlslist");
+    emitDiagnostic("video-cleaned");
   }
 
   function cleanAllVideos(root = document) {
@@ -62,6 +71,7 @@
           if (state.enabled) {
             if (value) log("Blocked disablePictureInPicture setter", this);
             if (descriptor.set) descriptor.set.call(this, false);
+            emitDiagnostic("setter-blocked", { requestedValue: value });
             this.removeAttribute("disablepictureinpicture");
             return;
           }
@@ -71,6 +81,7 @@
     );
 
     state.installed = true;
+    emitDiagnostic("property-override-installed");
   }
 
   function observeDom() {

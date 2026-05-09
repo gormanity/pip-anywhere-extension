@@ -18,6 +18,17 @@ const STYLE_ID = "ultimate-pip-style";
 const VIDEO_ATTRIBUTE = "data-ultimate-pip-observed";
 const INJECTED_SCRIPT_ID = "ultimate-pip-unblocker";
 const CONFIG_EVENT = "ultimate-pip.configure";
+const DIAGNOSTIC_EVENT = "ultimate-pip.diagnostic";
+
+interface DiagnosticsState {
+  videosObserved: number;
+  overlaySkippedShortVideo: number;
+  overlaySkippedUnknownDuration: number;
+  pipRequests: number;
+  pipFailures: number;
+  pageUnblockerEvents: Record<string, number>;
+  lastFailureReason: string | null;
+}
 
 let settings: PipSettings = { ...DEFAULT_SETTINGS };
 let overlay: HTMLButtonElement | null = null;
@@ -28,11 +39,28 @@ let hoverTimer: number | null = null;
 let overlayUpdateFrame: number | null = null;
 let pageUnblockerInjected = false;
 const api = getBrowserApi();
+const diagnostics: DiagnosticsState = {
+  videosObserved: 0,
+  overlaySkippedShortVideo: 0,
+  overlaySkippedUnknownDuration: 0,
+  pipRequests: 0,
+  pipFailures: 0,
+  pageUnblockerEvents: {},
+  lastFailureReason: null,
+};
 
 function log(...args: unknown[]): void {
-  if (settings.debugLogging) {
+  if (__DEV__ && settings.debugLogging) {
     console.debug("[ultimate-pip]", ...args);
   }
+}
+
+function recordDiagnostic(
+  event: string,
+  details: Record<string, unknown> | unknown = {},
+): void {
+  if (!__DEV__) return;
+  log("diagnostic", event, { details, state: diagnostics });
 }
 
 function ensureStyle(): void {
@@ -215,8 +243,22 @@ function isVideoEligibleForOverlay(video: HTMLVideoElement): boolean {
   const minimumSeconds = settings.minimumOverlayDurationSeconds;
   if (minimumSeconds <= 0) return true;
   if (video.duration === Infinity) return true;
-  if (!Number.isFinite(video.duration)) return false;
-  return video.duration >= minimumSeconds;
+  if (!Number.isFinite(video.duration)) {
+    diagnostics.overlaySkippedUnknownDuration += 1;
+    recordDiagnostic("overlay-skipped-unknown-duration", {
+      minimumSeconds,
+    });
+    return false;
+  }
+  if (video.duration < minimumSeconds) {
+    diagnostics.overlaySkippedShortVideo += 1;
+    recordDiagnostic("overlay-skipped-short-video", {
+      duration: video.duration,
+      minimumSeconds,
+    });
+    return false;
+  }
+  return true;
 }
 
 function showOverlay(video: HTMLVideoElement): void {
@@ -253,8 +295,14 @@ function scheduleOverlay(video: HTMLVideoElement): void {
 
 function observeVideo(video: HTMLVideoElement): void {
   if (video.dataset.ultimatePipObserved === "true") return;
+  diagnostics.videosObserved += 1;
   video.dataset.ultimatePipObserved = "true";
   video.setAttribute(VIDEO_ATTRIBUTE, "true");
+  recordDiagnostic("video-observed", {
+    readyState: video.readyState,
+    duration: video.duration,
+    disablePictureInPicture: video.disablePictureInPicture,
+  });
 
   if (settings.unblockVideoPiP) enableVideoPiP(video);
 
@@ -293,16 +341,18 @@ function injectPageUnblocker(): void {
   }
 
   pageUnblockerInjected = true;
+  recordDiagnostic("page-unblocker-injecting");
   const script = document.createElement("script");
   script.id = INJECTED_SCRIPT_ID;
   script.src = api.runtime.getURL("pip-unblocker.js");
   script.onload = () => {
     script.remove();
+    recordDiagnostic("page-unblocker-injected");
     dispatchUnblockerConfig();
   };
   script.onerror = () => {
     pageUnblockerInjected = false;
-    log("Failed to inject page-world PiP unblocker");
+    recordDiagnostic("page-unblocker-injection-failed");
   };
   (document.head ?? document.documentElement).appendChild(script);
 }
@@ -325,10 +375,15 @@ function handleMutations(mutations: MutationRecord[]): void {
 }
 
 async function triggerPiP(video: HTMLVideoElement | null) {
+  diagnostics.pipRequests += 1;
   const result = await togglePictureInPicture(video);
   if (!result.ok) {
-    log("PiP request failed", result);
+    diagnostics.pipFailures += 1;
+    diagnostics.lastFailureReason = result.reason ?? "unknown";
+    recordDiagnostic("pip-request-failed", result);
     showToast(failureMessage(result));
+  } else {
+    recordDiagnostic("pip-request-succeeded");
   }
   return result;
 }
@@ -341,6 +396,14 @@ async function init(): Promise<void> {
   }
 
   if (settings.unblockVideoPiP) injectPageUnblocker();
+  window.addEventListener(DIAGNOSTIC_EVENT, (event) => {
+    if (!__DEV__ || !(event instanceof CustomEvent)) return;
+    const type =
+      typeof event.detail?.type === "string" ? event.detail.type : "unknown";
+    diagnostics.pageUnblockerEvents[type] =
+      (diagnostics.pageUnblockerEvents[type] ?? 0) + 1;
+    recordDiagnostic("page-unblocker-event", event.detail);
+  });
   observeVideos();
   window.addEventListener("scroll", scheduleOverlayPositionUpdate, true);
   window.addEventListener("resize", scheduleOverlayPositionUpdate);
