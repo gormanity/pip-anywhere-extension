@@ -49,7 +49,9 @@ function readForm(): PipSettings {
       .checked,
     hoverDelayMs: Number(byId<HTMLInputElement>("hover-delay-ms").value),
     unblockVideoPiP: byId<HTMLInputElement>("unblock-video-pip").checked,
-    debugLogging: byId<HTMLInputElement>("debug-logging").checked,
+    debugLogging: __DEV__
+      ? byId<HTMLInputElement>("debug-logging").checked
+      : false,
   };
 }
 
@@ -63,7 +65,9 @@ function writeForm(settings: PipSettings): void {
     `${settings.hoverDelayMs} ms`;
   byId<HTMLInputElement>("unblock-video-pip").checked =
     settings.unblockVideoPiP;
-  byId<HTMLInputElement>("debug-logging").checked = settings.debugLogging;
+  if (__DEV__) {
+    byId<HTMLInputElement>("debug-logging").checked = settings.debugLogging;
+  }
 }
 
 function setStatus(text: string): void {
@@ -77,6 +81,7 @@ function setStatus(text: string): void {
 async function init(): Promise<void> {
   updateShortcutText();
   initShortcutButton();
+  byId<HTMLElement>("advanced-section").hidden = !__DEV__;
   writeForm(await loadSettings());
 
   const delay = byId<HTMLInputElement>("hover-delay-ms");

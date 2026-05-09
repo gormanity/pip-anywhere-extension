@@ -28,7 +28,7 @@ describe("settings normalization", () => {
       hoverOverlayEnabled: false,
       hoverDelayMs: 100,
       unblockVideoPiP: false,
-      debugLogging: true,
+      debugLogging: __DEV__,
     });
   });
 });

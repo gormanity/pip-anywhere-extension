@@ -29,10 +29,11 @@ export function normalizeSettings(input: unknown): PipSettings {
       typeof candidate.unblockVideoPiP === "boolean"
         ? candidate.unblockVideoPiP
         : DEFAULT_SETTINGS.unblockVideoPiP,
-    debugLogging:
-      typeof candidate.debugLogging === "boolean"
+    debugLogging: __DEV__
+      ? typeof candidate.debugLogging === "boolean"
         ? candidate.debugLogging
-        : DEFAULT_SETTINGS.debugLogging,
+        : DEFAULT_SETTINGS.debugLogging
+      : false,
   };
 }
 
