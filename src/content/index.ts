@@ -13,6 +13,7 @@ import {
 } from "@/core/settings";
 
 const OVERLAY_CLASS = "ultimate-pip-overlay";
+const TOAST_CLASS = "ultimate-pip-toast";
 const STYLE_ID = "ultimate-pip-style";
 const VIDEO_ATTRIBUTE = "data-ultimate-pip-observed";
 const INJECTED_SCRIPT_ID = "ultimate-pip-unblocker";
@@ -21,6 +22,8 @@ const CONFIG_EVENT = "ultimate-pip.configure";
 let settings: PipSettings = { ...DEFAULT_SETTINGS };
 let overlay: HTMLButtonElement | null = null;
 let overlayVideo: HTMLVideoElement | null = null;
+let toast: HTMLDivElement | null = null;
+let toastTimer: number | null = null;
 let hoverTimer: number | null = null;
 let overlayUpdateFrame: number | null = null;
 let pageUnblockerInjected = false;
@@ -69,6 +72,27 @@ function ensureStyle(): void {
       height: 24px;
       display: block;
     }
+    .${TOAST_CLASS} {
+      position: fixed;
+      z-index: 2147483647;
+      left: 50%;
+      bottom: 24px;
+      max-width: min(420px, calc(100vw - 32px));
+      transform: translate(-50%, 12px);
+      padding: 10px 14px;
+      border-radius: 8px;
+      color: white;
+      background: rgba(15, 23, 42, 0.94);
+      box-shadow: 0 14px 34px rgba(0, 0, 0, 0.28);
+      font: 500 14px/1.35 system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 140ms ease, transform 140ms ease;
+    }
+    .${TOAST_CLASS}[data-visible="true"] {
+      opacity: 1;
+      transform: translate(-50%, 0);
+    }
   `;
   document.documentElement.appendChild(style);
 }
@@ -97,6 +121,53 @@ function getOverlay(): HTMLButtonElement {
   ensureStyle();
   overlay ??= createOverlay();
   return overlay;
+}
+
+function getToast(): HTMLDivElement {
+  ensureStyle();
+  if (!toast) {
+    toast = document.createElement("div");
+    toast.className = TOAST_CLASS;
+    toast.setAttribute("role", "status");
+    toast.setAttribute("aria-live", "polite");
+    document.documentElement.appendChild(toast);
+  }
+  return toast;
+}
+
+function failureMessage(
+  result: Awaited<ReturnType<typeof togglePictureInPicture>>,
+) {
+  switch (result.reason) {
+    case "no-video":
+      return "No eligible video found on this page.";
+    case "unsupported":
+      return "Picture-in-picture is not available on this page.";
+    case "disabled":
+      return "This video is blocking picture-in-picture.";
+    case "not-ready":
+      return "The video is not ready for picture-in-picture yet.";
+    case "request-failed":
+      return result.message
+        ? `Picture-in-picture failed: ${result.message}`
+        : "Picture-in-picture failed.";
+    default:
+      return "Picture-in-picture failed.";
+  }
+}
+
+function showToast(message: string): void {
+  const element = getToast();
+  element.textContent = message;
+  element.dataset.visible = "true";
+
+  if (toastTimer !== null) {
+    window.clearTimeout(toastTimer);
+  }
+  toastTimer = window.setTimeout(() => {
+    element.removeAttribute("data-visible");
+    toastTimer = null;
+  }, 3200);
 }
 
 function positionOverlay(video: HTMLVideoElement): void {
@@ -255,7 +326,10 @@ function handleMutations(mutations: MutationRecord[]): void {
 
 async function triggerPiP(video: HTMLVideoElement | null) {
   const result = await togglePictureInPicture(video);
-  if (!result.ok) log("PiP request failed", result);
+  if (!result.ok) {
+    log("PiP request failed", result);
+    showToast(failureMessage(result));
+  }
   return result;
 }
 
