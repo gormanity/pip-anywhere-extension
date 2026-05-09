@@ -16,6 +16,12 @@
       "all_frames": true
     }
   ],
+  "web_accessible_resources": [
+    {
+      "resources": ["pip-unblocker.js"],
+      "matches": ["<all_urls>"]
+    }
+  ],
   "commands": {
     "toggle-picture-in-picture": {
       "suggested_key": {

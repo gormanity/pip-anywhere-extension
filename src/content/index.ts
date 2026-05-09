@@ -15,11 +15,14 @@ import {
 const OVERLAY_CLASS = "ultimate-pip-overlay";
 const STYLE_ID = "ultimate-pip-style";
 const VIDEO_ATTRIBUTE = "data-ultimate-pip-observed";
+const INJECTED_SCRIPT_ID = "ultimate-pip-unblocker";
+const CONFIG_EVENT = "ultimate-pip.configure";
 
 let settings: PipSettings = { ...DEFAULT_SETTINGS };
 let overlay: HTMLButtonElement | null = null;
 let overlayVideo: HTMLVideoElement | null = null;
 let hoverTimer: number | null = null;
+let pageUnblockerInjected = false;
 const api = getBrowserApi();
 
 function log(...args: unknown[]): void {
@@ -154,6 +157,38 @@ function observeVideos(root: ParentNode = document): void {
   }
 }
 
+function dispatchUnblockerConfig(): void {
+  window.dispatchEvent(
+    new CustomEvent(CONFIG_EVENT, {
+      detail: {
+        enabled: settings.unblockVideoPiP,
+        debug: settings.debugLogging,
+      },
+    }),
+  );
+}
+
+function injectPageUnblocker(): void {
+  if (pageUnblockerInjected || document.getElementById(INJECTED_SCRIPT_ID)) {
+    dispatchUnblockerConfig();
+    return;
+  }
+
+  pageUnblockerInjected = true;
+  const script = document.createElement("script");
+  script.id = INJECTED_SCRIPT_ID;
+  script.src = api.runtime.getURL("pip-unblocker.js");
+  script.onload = () => {
+    script.remove();
+    dispatchUnblockerConfig();
+  };
+  script.onerror = () => {
+    pageUnblockerInjected = false;
+    log("Failed to inject page-world PiP unblocker");
+  };
+  (document.head ?? document.documentElement).appendChild(script);
+}
+
 function handleMutations(mutations: MutationRecord[]): void {
   for (const mutation of mutations) {
     if (
@@ -183,6 +218,7 @@ async function init(): Promise<void> {
     settings = { ...DEFAULT_SETTINGS };
   }
 
+  if (settings.unblockVideoPiP) injectPageUnblocker();
   observeVideos();
   const observer = new MutationObserver(handleMutations);
   observer.observe(document.documentElement, {
@@ -196,6 +232,11 @@ async function init(): Promise<void> {
     const next = changes[SETTINGS_KEY];
     if (areaName === "sync" && next) {
       settings = normalizeSettings(next.newValue);
+      if (settings.unblockVideoPiP && !pageUnblockerInjected) {
+        injectPageUnblocker();
+      } else if (pageUnblockerInjected) {
+        dispatchUnblockerConfig();
+      }
       observeVideos();
     }
   });

@@ -17,6 +17,20 @@ export default tseslint.config(
     },
   },
   {
+    files: ["src/injected/**/*.js"],
+    languageOptions: {
+      globals: {
+        console: "readonly",
+        CustomEvent: "readonly",
+        document: "readonly",
+        Element: "readonly",
+        HTMLVideoElement: "readonly",
+        MutationObserver: "readonly",
+        window: "readonly",
+      },
+    },
+  },
+  {
     ignores: ["dist/**", "dist-dev/**", "node_modules/**", "releases/**"],
   },
 );

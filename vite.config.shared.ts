@@ -110,6 +110,10 @@ function copyAssets(browser: string, isDev: boolean): Plugin {
         resolve(outDir, "options.css"),
         bundleCss(resolve(import.meta.dirname, "src/options/index.css")),
       );
+      copyFileSync(
+        resolve(import.meta.dirname, "src/injected/pip-unblocker.js"),
+        resolve(outDir, "pip-unblocker.js"),
+      );
       await generateIcons(browser, outDir);
     },
   };

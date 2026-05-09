@@ -23,6 +23,7 @@ src/
   background/       # command/action routing to the active tab
   content/          # video discovery, overlay UI, and PiP triggering
   core/             # shared browser, settings, and PiP helpers
+  injected/         # page-world scripts copied into extension builds
   manifests/        # per-browser MV3 manifests
   options/          # options page HTML/CSS/TS
   assets/           # source SVG icon
@@ -68,6 +69,8 @@ The project uses Vite with one config per browser and shared build logic in
 - Background and options scripts are bundled as ES modules.
 - The content script is bundled as an IIFE so it does not rely on runtime module
   imports.
+- Page-world scripts in `src/injected/` are copied as assets and exposed through
+  `web_accessible_resources`.
 - Manifests live in `src/manifests/` and receive `package.json` version during
   build.
 - Icons are generated from `src/assets/icon.svg`.
