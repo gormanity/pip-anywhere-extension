@@ -22,6 +22,7 @@ let settings: PipSettings = { ...DEFAULT_SETTINGS };
 let overlay: HTMLButtonElement | null = null;
 let overlayVideo: HTMLVideoElement | null = null;
 let hoverTimer: number | null = null;
+let overlayUpdateFrame: number | null = null;
 let pageUnblockerInjected = false;
 const api = getBrowserApi();
 
@@ -101,10 +102,32 @@ function getOverlay(): HTMLButtonElement {
 function positionOverlay(video: HTMLVideoElement): void {
   const button = getOverlay();
   const rect = video.getBoundingClientRect();
+  if (rect.width <= 0 || rect.height <= 0) {
+    button.removeAttribute("data-visible");
+    return;
+  }
   const top = Math.max(8, rect.top + 12);
   const left = Math.max(8, rect.right - 54);
   button.style.top = `${top}px`;
   button.style.left = `${left}px`;
+}
+
+function updateVisibleOverlayPosition(): void {
+  overlayUpdateFrame = null;
+  if (!overlayVideo || overlay?.dataset.visible !== "true") return;
+  if (!overlayVideo.isConnected) {
+    overlay?.removeAttribute("data-visible");
+    overlayVideo = null;
+    return;
+  }
+  positionOverlay(overlayVideo);
+}
+
+function scheduleOverlayPositionUpdate(): void {
+  if (overlayUpdateFrame !== null) return;
+  overlayUpdateFrame = window.requestAnimationFrame(
+    updateVisibleOverlayPosition,
+  );
 }
 
 function showOverlay(video: HTMLVideoElement): void {
@@ -145,6 +168,7 @@ function observeVideo(video: HTMLVideoElement): void {
   if (settings.unblockVideoPiP) enableVideoPiP(video);
 
   video.addEventListener("mouseenter", () => scheduleOverlay(video));
+  video.addEventListener("mousemove", scheduleOverlayPositionUpdate);
   video.addEventListener("mouseleave", () => {
     clearHoverTimer();
     hideOverlaySoon();
@@ -221,6 +245,9 @@ async function init(): Promise<void> {
 
   if (settings.unblockVideoPiP) injectPageUnblocker();
   observeVideos();
+  window.addEventListener("scroll", scheduleOverlayPositionUpdate, true);
+  window.addEventListener("resize", scheduleOverlayPositionUpdate);
+
   const observer = new MutationObserver(handleMutations);
   observer.observe(document.documentElement, {
     attributes: true,
