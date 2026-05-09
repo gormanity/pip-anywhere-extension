@@ -5,7 +5,7 @@ codebase.
 
 ## Project Overview
 
-Ultimate PiP is a Chrome, Firefox, and Edge MV3 extension that triggers native
+PiP Anywhere is a Chrome, Firefox, and Edge MV3 extension that triggers native
 HTML5 picture-in-picture from:
 
 - a browser-managed hotkey command,

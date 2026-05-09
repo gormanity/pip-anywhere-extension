@@ -1,7 +1,7 @@
-# Ultimate PiP
+# PiP Anywhere
 
-Ultimate PiP is a Chrome, Firefox, and Edge extension for triggering native
-HTML5 picture-in-picture from a keyboard shortcut, the toolbar icon, or a hover
+PiP Anywhere is a Chrome, Firefox, and Edge extension for triggering native HTML5
+picture-in-picture from a keyboard shortcut, the toolbar icon, or a hover
 overlay on video elements.
 
 ## Features
