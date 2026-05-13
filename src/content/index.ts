@@ -191,6 +191,7 @@ function scheduleToastHide(delayMs: number): void {
 function failureMessage(
   result: Awaited<ReturnType<typeof togglePictureInPicture>>,
 ) {
+  const message = result.message ?? "";
   switch (result.reason) {
     case "no-video":
       return "No eligible video found on this page.";
@@ -201,8 +202,11 @@ function failureMessage(
     case "not-ready":
       return "The video is not ready for picture-in-picture yet.";
     case "request-failed":
-      return result.message
-        ? `Picture-in-picture failed: ${result.message}`
+      if (/user gesture|user activation/i.test(message)) {
+        return "Click the video or page once, then try picture-in-picture again.";
+      }
+      return message
+        ? `Picture-in-picture failed: ${message}`
         : "Picture-in-picture failed.";
     default:
       return "Picture-in-picture failed.";
