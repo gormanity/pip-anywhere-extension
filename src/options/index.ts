@@ -20,12 +20,21 @@ function byId<T extends HTMLElement>(id: string): T {
   return element as T;
 }
 
-function updateShortcutText(): void {
-  const shortcut = byId<HTMLInputElement>("shortcut");
+function manifestShortcut(): string {
   const manifest = api.runtime.getManifest();
   const command = manifest.commands?.[COMMAND_NAME];
-  const suggested = command?.suggested_key?.default ?? "Alt+Shift+P";
-  shortcut.value = suggested;
+  return command?.suggested_key?.default ?? "Alt+Shift+P";
+}
+
+async function updateShortcutText(): Promise<void> {
+  const shortcut = byId<HTMLInputElement>("shortcut");
+  try {
+    const commands = await api.commands.getAll();
+    const command = commands.find((item) => item.name === COMMAND_NAME);
+    shortcut.value = command?.shortcut || "Not set";
+  } catch {
+    shortcut.value = manifestShortcut();
+  }
 }
 
 function shortcutManagementUrl(): string | null {
@@ -45,6 +54,7 @@ function initShortcutButton(): void {
 
   button.addEventListener("click", () => {
     void api.tabs.create({ url });
+    void updateShortcutText();
   });
 }
 
@@ -148,7 +158,7 @@ function bindAutoSave(): void {
 }
 
 async function init(): Promise<void> {
-  updateShortcutText();
+  await updateShortcutText();
   initShortcutButton();
   initStatusHover();
   for (const corner of OVERLAY_CORNERS) {
