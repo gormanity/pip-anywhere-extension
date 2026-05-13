@@ -30,12 +30,14 @@ function scoreVideosInFrame(): FrameVideoCandidate {
     const rect = video.getBoundingClientRect();
     const visibleArea = Math.max(0, rect.width) * Math.max(0, rect.height);
     const isPlaying = !video.paused && !video.ended;
+    const mutedPenalty = video.muted ? -8_000 : 0;
     const hasMetadata = video.readyState >= HTMLMediaElement.HAVE_METADATA;
     const hasCurrentData =
       video.readyState >= HTMLMediaElement.HAVE_CURRENT_DATA;
 
     const score =
       (isPlaying ? 10_000 : 0) +
+      mutedPenalty +
       (hasCurrentData ? 2_000 : hasMetadata ? 1_000 : 0) +
       Math.min(visibleArea, 1_000_000) / 1_000;
 
@@ -50,12 +52,14 @@ async function directTogglePiPInFrame(): Promise<DirectPipResult> {
     const rect = video.getBoundingClientRect();
     const visibleArea = Math.max(0, rect.width) * Math.max(0, rect.height);
     const isPlaying = !video.paused && !video.ended;
+    const mutedPenalty = video.muted ? -8_000 : 0;
     const hasMetadata = video.readyState >= HTMLMediaElement.HAVE_METADATA;
     const hasCurrentData =
       video.readyState >= HTMLMediaElement.HAVE_CURRENT_DATA;
 
     return (
       (isPlaying ? 10_000 : 0) +
+      mutedPenalty +
       (hasCurrentData ? 2_000 : hasMetadata ? 1_000 : 0) +
       Math.min(visibleArea, 1_000_000) / 1_000
     );

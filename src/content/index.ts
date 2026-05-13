@@ -271,6 +271,13 @@ function scheduleOverlayPositionUpdate(): void {
 
 function isVideoEligibleForOverlay(video: HTMLVideoElement): boolean {
   const minimumSeconds = settings.minimumOverlayDurationSeconds;
+  if (video.muted && !Number.isFinite(video.duration)) {
+    recordDiagnostic("overlay-skipped-muted-preview", {
+      readyState: video.readyState,
+      paused: video.paused,
+    });
+    return false;
+  }
   if (minimumSeconds <= 0) return true;
   if (video.duration === Infinity) return true;
   if (

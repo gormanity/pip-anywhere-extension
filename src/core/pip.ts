@@ -30,6 +30,7 @@ export function isActiveVideo(video: HTMLVideoElement): boolean {
   return (
     !video.paused &&
     !video.ended &&
+    !video.muted &&
     video.readyState >= HTMLMediaElement.HAVE_CURRENT_DATA
   );
 }
