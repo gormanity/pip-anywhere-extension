@@ -271,6 +271,13 @@ function scheduleOverlayPositionUpdate(): void {
 
 function isVideoEligibleForOverlay(video: HTMLVideoElement): boolean {
   const minimumSeconds = settings.minimumOverlayDurationSeconds;
+  if (isYouTubeThumbnailPreview(video)) {
+    recordDiagnostic("overlay-skipped-youtube-thumbnail", {
+      duration: video.duration,
+      muted: video.muted,
+    });
+    return false;
+  }
   if (video.muted && !Number.isFinite(video.duration)) {
     recordDiagnostic("overlay-skipped-muted-preview", {
       readyState: video.readyState,
@@ -303,6 +310,24 @@ function isVideoEligibleForOverlay(video: HTMLVideoElement): boolean {
     return false;
   }
   return true;
+}
+
+function isYouTubeThumbnailPreview(video: HTMLVideoElement): boolean {
+  if (location.hostname !== "www.youtube.com") return false;
+  if (location.pathname === "/watch") return false;
+  return Boolean(
+    video.closest(
+      [
+        "ytd-thumbnail",
+        "ytd-rich-item-renderer",
+        "ytd-video-renderer",
+        "ytd-grid-video-renderer",
+        "ytd-compact-video-renderer",
+        "ytd-reel-item-renderer",
+        "ytd-video-preview",
+      ].join(","),
+    ),
+  );
 }
 
 function showOverlay(video: HTMLVideoElement): void {
