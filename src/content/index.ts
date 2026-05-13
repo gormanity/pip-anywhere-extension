@@ -35,6 +35,7 @@ let overlay: HTMLButtonElement | null = null;
 let overlayVideo: HTMLVideoElement | null = null;
 let toast: HTMLDivElement | null = null;
 let toastTimer: number | null = null;
+let toastText: string | null = null;
 let hoverTimer: number | null = null;
 let hoverTargetVideo: HTMLVideoElement | null = null;
 let pointerVideo: HTMLVideoElement | null = null;
@@ -160,9 +161,31 @@ function getToast(): HTMLDivElement {
     toast.className = TOAST_CLASS;
     toast.setAttribute("role", "status");
     toast.setAttribute("aria-live", "polite");
+    toast.addEventListener("mouseenter", () => {
+      if (toastTimer !== null) {
+        window.clearTimeout(toastTimer);
+        toastTimer = null;
+      }
+    });
+    toast.addEventListener("mouseleave", () => {
+      if (!toastText || toastTimer !== null) return;
+      scheduleToastHide(1200);
+    });
     document.documentElement.appendChild(toast);
   }
   return toast;
+}
+
+function scheduleToastHide(delayMs: number): void {
+  const element = getToast();
+  const text = toastText;
+  toastTimer = window.setTimeout(() => {
+    if (toastText === text) {
+      element.removeAttribute("data-visible");
+      toastText = null;
+    }
+    toastTimer = null;
+  }, delayMs);
 }
 
 function failureMessage(
@@ -188,16 +211,15 @@ function failureMessage(
 
 function showToast(message: string): void {
   const element = getToast();
+  toastText = message;
   element.textContent = message;
   element.dataset.visible = "true";
 
   if (toastTimer !== null) {
     window.clearTimeout(toastTimer);
-  }
-  toastTimer = window.setTimeout(() => {
-    element.removeAttribute("data-visible");
     toastTimer = null;
-  }, 3200);
+  }
+  scheduleToastHide(3200);
 }
 
 function positionOverlay(video: HTMLVideoElement): void {

@@ -300,16 +300,6 @@ button {
   cursor: pointer;
 }
 
-.primary-button {
-  background: var(--primary);
-  color: var(--primary-text);
-  box-shadow: 0 8px 18px color-mix(in srgb, var(--primary) 24%, transparent);
-}
-
-.primary-button:hover {
-  background: var(--primary-strong);
-}
-
 .secondary-button {
   border-color: var(--line);
   background: var(--panel);

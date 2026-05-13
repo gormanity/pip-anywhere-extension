@@ -10,6 +10,9 @@ import { getBrowserApi } from "@/core/browser";
 
 const COMMAND_NAME = "toggle-picture-in-picture";
 const api = getBrowserApi();
+let saveTimer: number | null = null;
+let statusTimer: number | null = null;
+let initialized = false;
 
 function byId<T extends HTMLElement>(id: string): T {
   const element = document.getElementById(id);
@@ -99,14 +102,55 @@ function writeForm(settings: PipSettings): void {
 function setStatus(text: string): void {
   const status = byId<HTMLElement>("status");
   status.textContent = text;
-  window.setTimeout(() => {
+
+  if (statusTimer !== null) {
+    window.clearTimeout(statusTimer);
+  }
+  statusTimer = window.setTimeout(() => {
     if (status.textContent === text) status.textContent = "";
+    statusTimer = null;
   }, 2000);
+}
+
+function initStatusHover(): void {
+  const status = byId<HTMLElement>("status");
+  status.addEventListener("mouseenter", () => {
+    if (statusTimer !== null) {
+      window.clearTimeout(statusTimer);
+      statusTimer = null;
+    }
+  });
+  status.addEventListener("mouseleave", () => {
+    if (!status.textContent || statusTimer !== null) return;
+    const text = status.textContent;
+    statusTimer = window.setTimeout(() => {
+      if (status.textContent === text) status.textContent = "";
+      statusTimer = null;
+    }, 1200);
+  });
+}
+
+function scheduleSave(): void {
+  if (!initialized) return;
+  if (saveTimer !== null) {
+    window.clearTimeout(saveTimer);
+  }
+  saveTimer = window.setTimeout(() => {
+    saveTimer = null;
+    void saveSettings(readForm()).then(() => setStatus("Settings saved."));
+  }, 250);
+}
+
+function bindAutoSave(): void {
+  const form = byId<HTMLFormElement>("options-form");
+  form.addEventListener("input", scheduleSave);
+  form.addEventListener("change", scheduleSave);
 }
 
 async function init(): Promise<void> {
   updateShortcutText();
   initShortcutButton();
+  initStatusHover();
   for (const corner of OVERLAY_CORNERS) {
     const option = document.createElement("option");
     option.value = corner;
@@ -118,6 +162,8 @@ async function init(): Promise<void> {
   }
   byId<HTMLElement>("advanced-section").hidden = !__DEV__;
   writeForm(await loadSettings());
+  bindAutoSave();
+  initialized = true;
 
   const delay = byId<HTMLInputElement>("hover-delay-ms");
   delay.addEventListener("input", () => {
@@ -144,7 +190,6 @@ async function init(): Promise<void> {
 
   byId<HTMLFormElement>("options-form").addEventListener("submit", (event) => {
     event.preventDefault();
-    void saveSettings(readForm()).then(() => setStatus("Settings saved."));
   });
 
   byId<HTMLButtonElement>("reset").addEventListener("click", () => {
