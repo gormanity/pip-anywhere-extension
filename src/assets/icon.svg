@@ -1,6 +1,27 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128">
-  <rect width="128" height="128" rx="28" fill="#14213d"/>
-  <rect x="22" y="32" width="84" height="58" rx="10" fill="#f8fafc"/>
-  <rect x="61" y="56" width="34" height="24" rx="5" fill="#fca311"/>
-  <path d="M34 44h26" stroke="#14213d" stroke-width="8" stroke-linecap="round"/>
+  <defs>
+    <linearGradient id="tile" x1="20" y1="10" x2="108" y2="118" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#1f6feb"/>
+      <stop offset="0.52" stop-color="#172554"/>
+      <stop offset="1" stop-color="#0f172a"/>
+    </linearGradient>
+    <linearGradient id="pip" x1="70" y1="62" x2="110" y2="104" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#ffd166"/>
+      <stop offset="1" stop-color="#f59f00"/>
+    </linearGradient>
+    <filter id="soft-shadow" x="-20%" y="-20%" width="140%" height="150%">
+      <feDropShadow dx="0" dy="6" stdDeviation="5" flood-color="#020617" flood-opacity="0.34"/>
+    </filter>
+  </defs>
+
+  <rect width="128" height="128" rx="28" fill="url(#tile)"/>
+  <path d="M31 35h58c7.2 0 13 5.8 13 13v26c0 7.2-5.8 13-13 13H31c-7.2 0-13-5.8-13-13V48c0-7.2 5.8-13 13-13Z" fill="#f8fafc" opacity="0.98"/>
+  <path d="M32 48h48" stroke="#172554" stroke-width="8" stroke-linecap="round"/>
+  <path d="M32 64h27" stroke="#94a3b8" stroke-width="7" stroke-linecap="round"/>
+
+  <g filter="url(#soft-shadow)">
+    <path d="M69 64h33c6.1 0 11 4.9 11 11v23c0 6.1-4.9 11-11 11H69c-6.1 0-11-4.9-11-11V75c0-6.1 4.9-11 11-11Z" fill="#0f172a"/>
+    <path d="M72 70h28c3.9 0 7 3.1 7 7v18c0 3.9-3.1 7-7 7H72c-3.9 0-7-3.1-7-7V77c0-3.9 3.1-7 7-7Z" fill="url(#pip)"/>
+    <path d="M75 80h15" stroke="#7c2d12" stroke-width="5" stroke-linecap="round" opacity="0.82"/>
+  </g>
 </svg>
