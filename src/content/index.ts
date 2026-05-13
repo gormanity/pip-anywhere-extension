@@ -36,6 +36,8 @@ let overlayVideo: HTMLVideoElement | null = null;
 let toast: HTMLDivElement | null = null;
 let toastTimer: number | null = null;
 let hoverTimer: number | null = null;
+let hoverTargetVideo: HTMLVideoElement | null = null;
+let pointerVideo: HTMLVideoElement | null = null;
 let overlayUpdateFrame: number | null = null;
 let pageUnblockerInjected = false;
 const api = getBrowserApi();
@@ -243,6 +245,13 @@ function isVideoEligibleForOverlay(video: HTMLVideoElement): boolean {
   const minimumSeconds = settings.minimumOverlayDurationSeconds;
   if (minimumSeconds <= 0) return true;
   if (video.duration === Infinity) return true;
+  if (
+    !Number.isFinite(video.duration) &&
+    !video.paused &&
+    video.readyState >= HTMLMediaElement.HAVE_CURRENT_DATA
+  ) {
+    return true;
+  }
   if (!Number.isFinite(video.duration)) {
     diagnostics.overlaySkippedUnknownDuration += 1;
     recordDiagnostic("overlay-skipped-unknown-duration", {
@@ -283,14 +292,63 @@ function clearHoverTimer(): void {
     window.clearTimeout(hoverTimer);
     hoverTimer = null;
   }
+  hoverTargetVideo = null;
 }
 
 function scheduleOverlay(video: HTMLVideoElement): void {
+  if (hoverTargetVideo === video && hoverTimer !== null) return;
   clearHoverTimer();
+  hoverTargetVideo = video;
   hoverTimer = window.setTimeout(
     () => showOverlay(video),
     settings.hoverDelayMs,
   );
+}
+
+function findVideoAtPoint(x: number, y: number): HTMLVideoElement | null {
+  const candidates = Array.from(document.querySelectorAll("video"))
+    .map((video) => {
+      const rect = video.getBoundingClientRect();
+      const contains =
+        rect.width > 0 &&
+        rect.height > 0 &&
+        x >= rect.left &&
+        x <= rect.right &&
+        y >= rect.top &&
+        y <= rect.bottom;
+      const area = rect.width * rect.height;
+      const playingScore = !video.paused && !video.ended ? 1_000_000 : 0;
+      return { video, contains, score: playingScore + area };
+    })
+    .filter((candidate) => candidate.contains)
+    .sort((a, b) => b.score - a.score);
+
+  return candidates[0]?.video ?? null;
+}
+
+function handleDocumentMouseMove(event: MouseEvent): void {
+  if (overlay?.matches(":hover")) return;
+
+  const video = findVideoAtPoint(event.clientX, event.clientY);
+  if (!video) {
+    pointerVideo = null;
+    clearHoverTimer();
+    hideOverlaySoon();
+    return;
+  }
+
+  if (pointerVideo === video) {
+    if (overlay?.dataset.visible === "true") {
+      scheduleOverlayPositionUpdate();
+    } else {
+      scheduleOverlay(video);
+    }
+    return;
+  }
+
+  pointerVideo = video;
+  observeVideo(video);
+  scheduleOverlay(video);
 }
 
 function observeVideo(video: HTMLVideoElement): void {
@@ -309,10 +367,11 @@ function observeVideo(video: HTMLVideoElement): void {
   video.addEventListener("mouseenter", () => scheduleOverlay(video));
   video.addEventListener("mousemove", scheduleOverlayPositionUpdate);
   video.addEventListener("loadedmetadata", () => {
-    if (overlayVideo === video) showOverlay(video);
+    if (overlayVideo === video || pointerVideo === video) showOverlay(video);
   });
   video.addEventListener("mouseleave", () => {
     clearHoverTimer();
+    if (pointerVideo === video) pointerVideo = null;
     hideOverlaySoon();
   });
 }
@@ -405,6 +464,7 @@ async function init(): Promise<void> {
     recordDiagnostic("page-unblocker-event", event.detail);
   });
   observeVideos();
+  document.addEventListener("mousemove", handleDocumentMouseMove, true);
   window.addEventListener("scroll", scheduleOverlayPositionUpdate, true);
   window.addEventListener("resize", scheduleOverlayPositionUpdate);
 
