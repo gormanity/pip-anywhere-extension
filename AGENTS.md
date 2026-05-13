@@ -48,18 +48,19 @@ dist-dev/           # development build output, git-ignored
 
 ## Commands
 
-| Task               | Command                 |
-| ------------------ | ----------------------- |
-| Install deps       | `pnpm install`          |
-| Format             | `pnpm run format`       |
-| Format check       | `pnpm run format:check` |
-| Lint               | `pnpm run lint`         |
-| Type check         | `pnpm run typecheck`    |
-| Test               | `pnpm run test`         |
-| Dev build          | `pnpm run dev:build`    |
-| Production build   | `pnpm run build`        |
-| Full local check   | `pnpm run check`        |
-| Package store zips | `pnpm run package`      |
+| Task                | Command                        |
+| ------------------- | ------------------------------ |
+| Install deps        | `pnpm install`                 |
+| Format              | `pnpm run format`              |
+| Format check        | `pnpm run format:check`        |
+| Lint                | `pnpm run lint`                |
+| Type check          | `pnpm run typecheck`           |
+| Test                | `pnpm run test`                |
+| Dev build           | `pnpm run dev:build`           |
+| Production build    | `pnpm run build`               |
+| Full local check    | `pnpm run check`               |
+| Package store zips  | `pnpm run package`             |
+| Firefox add-on lint | `pnpm run lint:addons:firefox` |
 
 ## Build
 
@@ -74,6 +75,11 @@ The project uses Vite with one config per browser and shared build logic in
 - Manifests live in `src/manifests/` and receive `package.json` version during
   build.
 - Icons are generated from `src/assets/icon.svg`.
+- Firefox builds are validated with Mozilla `addons-linter`; `pnpm run check`
+  lints `dist/firefox`, and `pnpm run lint:addons:firefox:zip` validates the
+  packaged Firefox zip.
+- CI runs the same checks, packages all browser zips, validates the Firefox zip,
+  and uploads the zip files as workflow artifacts.
 - Do not commit `dist/`, `dist-dev/`, `releases/`, or `node_modules/`.
 
 ## Code Conventions

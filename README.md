@@ -33,11 +33,12 @@ video, a video that repeatedly tries to disable PiP, and an iframe video.
 
 ## Commands
 
-| Task                   | Command              |
-| ---------------------- | -------------------- |
-| Dev build all browsers | `pnpm run dev:build` |
-| Build all browsers     | `pnpm run build`     |
-| Type check             | `pnpm run typecheck` |
-| Test                   | `pnpm run test`      |
-| Full check             | `pnpm run check`     |
-| Package zips           | `pnpm run package`   |
+| Task                   | Command                        |
+| ---------------------- | ------------------------------ |
+| Dev build all browsers | `pnpm run dev:build`           |
+| Build all browsers     | `pnpm run build`               |
+| Type check             | `pnpm run typecheck`           |
+| Test                   | `pnpm run test`                |
+| Full check             | `pnpm run check`               |
+| Package zips           | `pnpm run package`             |
+| Firefox add-on lint    | `pnpm run lint:addons:firefox` |
