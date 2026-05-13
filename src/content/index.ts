@@ -234,14 +234,16 @@ function positionOverlay(video: HTMLVideoElement): void {
     return;
   }
   const buttonSize = 42;
+  const adaptiveOffsetX = Math.min(settings.overlayOffsetX, rect.width * 0.15);
+  const adaptiveOffsetY = Math.min(settings.overlayOffsetY, rect.height * 0.15);
   const fromRight = settings.overlayCorner.endsWith("right");
   const fromBottom = settings.overlayCorner.startsWith("bottom");
   const top = fromBottom
-    ? rect.bottom - buttonSize - settings.overlayOffsetY
-    : rect.top + settings.overlayOffsetY;
+    ? rect.bottom - buttonSize - adaptiveOffsetY
+    : rect.top + adaptiveOffsetY;
   const left = fromRight
-    ? rect.right - buttonSize - settings.overlayOffsetX
-    : rect.left + settings.overlayOffsetX;
+    ? rect.right - buttonSize - adaptiveOffsetX
+    : rect.left + adaptiveOffsetX;
 
   const maxTop = window.innerHeight - buttonSize - 8;
   const maxLeft = window.innerWidth - buttonSize - 8;
