@@ -9,6 +9,18 @@ interface FrameVideoCandidate {
   score: number;
 }
 
+interface DirectPipResult {
+  ok: boolean;
+  reason?:
+    | "no-video"
+    | "unsupported"
+    | "disabled"
+    | "not-ready"
+    | "request-failed";
+  message?: string;
+  score: number;
+}
+
 function scoreVideosInFrame(): FrameVideoCandidate {
   const videos = Array.from(document.querySelectorAll("video"));
   if (videos.length === 0) return { hasVideo: false, score: 0 };
@@ -33,6 +45,62 @@ function scoreVideosInFrame(): FrameVideoCandidate {
   return { hasVideo: true, score: bestScore };
 }
 
+async function directTogglePiPInFrame(): Promise<DirectPipResult> {
+  function scoreVideo(video: HTMLVideoElement): number {
+    const rect = video.getBoundingClientRect();
+    const visibleArea = Math.max(0, rect.width) * Math.max(0, rect.height);
+    const isPlaying = !video.paused && !video.ended;
+    const hasMetadata = video.readyState >= HTMLMediaElement.HAVE_METADATA;
+    const hasCurrentData =
+      video.readyState >= HTMLMediaElement.HAVE_CURRENT_DATA;
+
+    return (
+      (isPlaying ? 10_000 : 0) +
+      (hasCurrentData ? 2_000 : hasMetadata ? 1_000 : 0) +
+      Math.min(visibleArea, 1_000_000) / 1_000
+    );
+  }
+
+  const videos = Array.from(document.querySelectorAll("video"));
+  const scored = videos
+    .map((video) => ({ video, score: scoreVideo(video) }))
+    .sort((a, b) => b.score - a.score);
+  const best = scored[0];
+  if (!best) return { ok: false, reason: "no-video", score: 0 };
+
+  const { video, score } = best;
+  if (!document.pictureInPictureEnabled) {
+    return { ok: false, reason: "unsupported", score };
+  }
+
+  video.disablePictureInPicture = false;
+  video.removeAttribute("disablepictureinpicture");
+  video.removeAttribute("controlslist");
+
+  if (video.disablePictureInPicture) {
+    return { ok: false, reason: "disabled", score };
+  }
+  if (video.readyState < HTMLMediaElement.HAVE_METADATA) {
+    return { ok: false, reason: "not-ready", score };
+  }
+
+  try {
+    if (document.pictureInPictureElement === video) {
+      await document.exitPictureInPicture();
+    } else {
+      await video.requestPictureInPicture();
+    }
+    return { ok: true, score };
+  } catch (error) {
+    return {
+      ok: false,
+      reason: "request-failed",
+      message: error instanceof Error ? error.message : String(error),
+      score,
+    };
+  }
+}
+
 async function findBestFrameId(tabId: number): Promise<number | undefined> {
   const results = await api.scripting.executeScript<[], FrameVideoCandidate>({
     target: { tabId, allFrames: true },
@@ -44,6 +112,15 @@ async function findBestFrameId(tabId: number): Promise<number | undefined> {
     .sort((a, b) => (b.result?.score ?? 0) - (a.result?.score ?? 0))[0];
 
   return best?.frameId;
+}
+
+async function directToggleInBestFrame(tabId: number): Promise<boolean> {
+  const results = (await api.scripting.executeScript({
+    target: { tabId, allFrames: true },
+    func: directTogglePiPInFrame,
+  })) as chrome.scripting.InjectionResult<DirectPipResult>[];
+
+  return results.some((result) => result.result?.ok);
 }
 
 async function sendToggleToFrame(
@@ -60,6 +137,10 @@ async function sendToggleToFrame(
 async function sendToggleToActiveTab(): Promise<void> {
   const [tab] = await api.tabs.query({ active: true, currentWindow: true });
   if (!tab?.id) return;
+
+  if (await directToggleInBestFrame(tab.id).catch(() => false)) {
+    return;
+  }
 
   const frameId = await findBestFrameId(tab.id).catch(() => undefined);
 
