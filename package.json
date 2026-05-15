@@ -19,6 +19,7 @@
     "build:firefox": "vite build --config vite.config.firefox.ts",
     "build:edge": "vite build --config vite.config.edge.ts",
     "build": "pnpm run build:chrome && pnpm run build:edge",
+    "build:listings": "node scripts/build-listings.js",
     "package": "pnpm run build && node scripts/package.mjs",
     "test": "vitest run",
     "test:e2e": "pnpm run dev:build:chrome && playwright test",

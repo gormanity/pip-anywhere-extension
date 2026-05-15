@@ -42,6 +42,7 @@ Use `docs/manual-smoke.md` for the real-site smoke checklist before release.
 | ---------------------- | -------------------------- |
 | Dev build Chrome/Edge  | `pnpm run dev:build`       |
 | Build Chrome/Edge      | `pnpm run build`           |
+| Build store listings   | `pnpm run build:listings`  |
 | Type check             | `pnpm run typecheck`       |
 | Unit test              | `pnpm run test`            |
 | E2E test               | `pnpm run test:e2e`        |
