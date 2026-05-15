@@ -179,6 +179,30 @@ test("positions the overlay from the configured corner and offsets", async () =>
   );
 });
 
+test("enters native PiP from the hover overlay click", async () => {
+  await page!.goto(`${server.origin}/pip-fixture.html`);
+  await expectVideoDuration("#eligible-video", 45);
+  await hoverCenter(page!, "#eligible-video");
+  await page!.locator(".ultimate-pip-overlay").click();
+
+  await expect
+    .poll(() =>
+      page!.evaluate(() => {
+        return document.pictureInPictureElement?.id ?? null;
+      }),
+    )
+    .toBe("eligible-video");
+});
+
+test("shows no-video feedback from an extension toggle message", async () => {
+  await page!.goto(`${server.origin}/empty-fixture.html`);
+  await sendToggleMessageToPage(`${server.origin}/empty-fixture.html`);
+
+  await expect(page!.locator(".ultimate-pip-toast")).toHaveText(
+    "No eligible video found on this page.",
+  );
+});
+
 test("autosaves options page changes and shows status text", async () => {
   await page!.goto(`chrome-extension://${extensionId}/options.html`);
   await page!.locator("#hover-delay-ms").fill("400");
@@ -250,6 +274,36 @@ async function setSettings(
     },
   );
   await settingsPage.close();
+}
+
+async function sendToggleMessageToPage(url: string): Promise<void> {
+  const worker = context.serviceWorkers()[0];
+  if (!worker) throw new Error("Missing extension service worker");
+  await worker.evaluate(
+    async ({ targetUrl }) =>
+      new Promise<void>((resolve, reject) => {
+        chrome.tabs.query({}, (tabs) => {
+          const tab = tabs.find((candidate) =>
+            candidate.url?.startsWith(targetUrl),
+          );
+          if (!tab?.id) {
+            reject(new Error(`Missing tab for ${targetUrl}`));
+            return;
+          }
+
+          chrome.tabs.sendMessage(
+            tab.id,
+            { type: "ultimate-pip.toggle" },
+            () => {
+              const error = chrome.runtime.lastError;
+              if (error) reject(new Error(error.message));
+              else resolve();
+            },
+          );
+        });
+      }),
+    { targetUrl: url },
+  );
 }
 
 async function expectVideoDuration(
