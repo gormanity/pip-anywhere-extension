@@ -38,18 +38,19 @@ Use `docs/manual-smoke.md` for the real-site smoke checklist before release.
 
 ## Commands
 
-| Task                   | Command                    |
-| ---------------------- | -------------------------- |
-| Dev build Chrome/Edge  | `pnpm run dev:build`       |
-| Build Chrome/Edge      | `pnpm run build`           |
-| Build store listings   | `pnpm run build:listings`  |
-| Type check             | `pnpm run typecheck`       |
-| Unit test              | `pnpm run test`            |
-| E2E test               | `pnpm run test:e2e`        |
-| Headed E2E test        | `pnpm run test:e2e:headed` |
-| Full check             | `pnpm run check`           |
-| Package zips           | `pnpm run package`         |
-| Manual smoke checklist | `docs/manual-smoke.md`     |
+| Task                   | Command                     |
+| ---------------------- | --------------------------- |
+| Dev build Chrome/Edge  | `pnpm run dev:build`        |
+| Build Chrome/Edge      | `pnpm run build`            |
+| Build store listings   | `pnpm run build:listings`   |
+| Type check             | `pnpm run typecheck`        |
+| Unit test              | `pnpm run test`             |
+| E2E test               | `pnpm run test:e2e`         |
+| Headed E2E test        | `pnpm run test:e2e:headed`  |
+| Full check             | `pnpm run check`            |
+| Package zips           | `pnpm run package`          |
+| Release checklist      | `docs/release-checklist.md` |
+| Manual smoke checklist | `docs/manual-smoke.md`      |
 
 Firefox is not an MVP release target. Native Firefox PiP already covers much of
 the product value, including its own override flow for video-level PiP opt-outs.

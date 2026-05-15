@@ -32,6 +32,7 @@ tests/              # Vitest unit tests for pure helpers
 tests/e2e/          # Playwright local fixture smoke tests
 fixtures/           # manual and automated local video fixtures
 docs/               # manual release smoke checklists and project notes
+store/              # listing source, privacy policy, screenshots, and promo plans
 scripts/            # packaging scripts
 dist/               # production build output, git-ignored
 dist-dev/           # development build output, git-ignored
@@ -51,21 +52,22 @@ dist-dev/           # development build output, git-ignored
 
 ## Commands
 
-| Task                 | Command                    |
-| -------------------- | -------------------------- |
-| Install deps         | `pnpm install`             |
-| Format               | `pnpm run format`          |
-| Format check         | `pnpm run format:check`    |
-| Lint                 | `pnpm run lint`            |
-| Type check           | `pnpm run typecheck`       |
-| Test                 | `pnpm run test`            |
-| E2E test             | `pnpm run test:e2e`        |
-| Headed E2E test      | `pnpm run test:e2e:headed` |
-| Dev build            | `pnpm run dev:build`       |
-| Production build     | `pnpm run build`           |
-| Build store listings | `pnpm run build:listings`  |
-| Full local check     | `pnpm run check`           |
-| Package store zips   | `pnpm run package`         |
+| Task                 | Command                     |
+| -------------------- | --------------------------- |
+| Install deps         | `pnpm install`              |
+| Format               | `pnpm run format`           |
+| Format check         | `pnpm run format:check`     |
+| Lint                 | `pnpm run lint`             |
+| Type check           | `pnpm run typecheck`        |
+| Test                 | `pnpm run test`             |
+| E2E test             | `pnpm run test:e2e`         |
+| Headed E2E test      | `pnpm run test:e2e:headed`  |
+| Dev build            | `pnpm run dev:build`        |
+| Production build     | `pnpm run build`            |
+| Build store listings | `pnpm run build:listings`   |
+| Full local check     | `pnpm run check`            |
+| Package store zips   | `pnpm run package`          |
+| Release checklist    | `docs/release-checklist.md` |
 
 ## Build
 
