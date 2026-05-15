@@ -41,6 +41,14 @@ test("shows the hover overlay for eligible videos", async () => {
   await expect(page!.locator(".ultimate-pip-overlay")).toBeVisible();
 });
 
+test("detects videos covered by custom player layers", async () => {
+  await page!.goto(`${server.origin}/pip-fixture.html`);
+  await expectVideoDuration("#covered-video", 45);
+  await hoverCenter(page!, "#covered-player");
+
+  await expect(page!.locator(".ultimate-pip-overlay")).toBeVisible();
+});
+
 test("keeps the hover overlay off short and muted preview videos", async () => {
   await page!.goto(`${server.origin}/pip-fixture.html`);
   await expectVideoDuration("#short-video", 1);
@@ -50,6 +58,33 @@ test("keeps the hover overlay off short and muted preview videos", async () => {
 
   await hoverCenter(page!, "#muted-preview");
   await expect(page!.locator(".ultimate-pip-overlay")).toBeHidden();
+});
+
+test("observes dynamically inserted videos", async () => {
+  await page!.goto(`${server.origin}/pip-fixture.html`);
+  await page!.locator("#insert-video").click();
+  await expect(page!.locator("#dynamic-video")).toBeVisible();
+  await expectVideoDuration("#dynamic-video", 45);
+  await hoverCenter(page!, "#dynamic-video");
+
+  await expect(page!.locator(".ultimate-pip-overlay")).toBeVisible();
+});
+
+test("injects overlay behavior into same-origin iframes", async () => {
+  await page!.goto(`${server.origin}/pip-fixture.html`);
+  const frame = page!.frameLocator("#same-origin-frame");
+  await expect
+    .poll(() =>
+      frame.locator("#iframe-video").evaluate((video) => {
+        return (video as HTMLVideoElement).duration;
+      }),
+    )
+    .toBeGreaterThanOrEqual(45);
+
+  await page!.locator("#same-origin-frame").scrollIntoViewIfNeeded();
+  await frame.locator("#iframe-video").hover();
+
+  await expect(frame.locator(".ultimate-pip-overlay")).toBeVisible();
 });
 
 test("clears video-level PiP blocking attributes", async () => {
@@ -88,9 +123,16 @@ test("autosaves options page changes and shows status text", async () => {
 });
 
 async function hoverCenter(page: Page, selector: string): Promise<void> {
-  const box = await page.locator(selector).boundingBox();
+  const target = page.locator(selector);
+  await target.scrollIntoViewIfNeeded();
+  const box = await target.boundingBox();
   if (!box) throw new Error(`Missing bounding box for ${selector}`);
-  await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+  await target.hover({
+    position: {
+      x: box.width / 2,
+      y: box.height / 2,
+    },
+  });
 }
 
 async function closeExtensionPages(): Promise<void> {

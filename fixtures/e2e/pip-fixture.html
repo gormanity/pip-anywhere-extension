@@ -37,6 +37,30 @@
         background: linear-gradient(135deg, #0f172a, #334155);
       }
 
+      .player-shell {
+        position: relative;
+        width: min(640px, 100%);
+      }
+
+      .player-shell video {
+        width: 100%;
+      }
+
+      .player-glass {
+        position: absolute;
+        inset: 0;
+        display: grid;
+        place-items: end start;
+        padding: 16px;
+        color: white;
+        background: linear-gradient(
+          180deg,
+          rgb(15 23 42 / 0%),
+          rgb(15 23 42 / 28%)
+        );
+        pointer-events: auto;
+      }
+
       .thumbnail-preview video {
         width: 240px;
       }
@@ -81,9 +105,37 @@
         ></video>
       </section>
 
+      <section>
+        <h2>Video covered by player controls</h2>
+        <div class="player-shell" id="covered-player">
+          <video
+            id="covered-video"
+            src="/long.mp4"
+            preload="metadata"
+            controls
+          ></video>
+          <div class="player-glass">Synthetic player layer</div>
+        </div>
+      </section>
+
       <section class="thumbnail-preview">
         <h2>Muted preview</h2>
         <video id="muted-preview" muted controls></video>
+      </section>
+
+      <section>
+        <h2>Dynamically inserted video</h2>
+        <button id="insert-video" type="button">Insert video</button>
+        <div id="dynamic-video-host"></div>
+      </section>
+
+      <section>
+        <h2>Same-origin iframe video</h2>
+        <iframe
+          id="same-origin-frame"
+          title="Same-origin video frame"
+          src="/iframe-fixture.html"
+        ></iframe>
       </section>
     </main>
 
@@ -93,6 +145,18 @@
         blocked.disablePictureInPicture = true;
         blocked.setAttribute("disablepictureinpicture", "");
       }, 500);
+
+      document.getElementById("insert-video").addEventListener("click", () => {
+        const host = document.getElementById("dynamic-video-host");
+        host.innerHTML = `
+          <video
+            id="dynamic-video"
+            src="/long.mp4"
+            preload="metadata"
+            controls
+          ></video>
+        `;
+      });
     </script>
   </body>
 </html>

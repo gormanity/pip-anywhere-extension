@@ -44,10 +44,7 @@ export async function startFixtureServer(): Promise<FixtureServer> {
     }
   });
 
-  await new Promise<void>((resolveListen, rejectListen) => {
-    server.once("error", rejectListen);
-    server.listen(0, "127.0.0.1", () => resolveListen());
-  });
+  await listen(server);
 
   const address = server.address();
   if (!address || typeof address === "string") {
@@ -83,6 +80,13 @@ export async function launchExtensionContext(): Promise<{
 
 export async function closePage(page: Page | undefined): Promise<void> {
   if (page && !page.isClosed()) await page.close();
+}
+
+async function listen(server: Server): Promise<void> {
+  await new Promise<void>((resolveListen, rejectListen) => {
+    server.once("error", rejectListen);
+    server.listen(0, "127.0.0.1", () => resolveListen());
+  });
 }
 
 async function closeServer(server: Server): Promise<void> {

@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Iframe Video Fixture</title>
+    <style>
+      body {
+        margin: 0;
+        background: #111827;
+      }
+
+      video {
+        width: 100%;
+        aspect-ratio: 16 / 9;
+        display: block;
+        background: #111827;
+      }
+    </style>
+  </head>
+  <body>
+    <video
+      id="iframe-video"
+      src="/long.mp4"
+      preload="metadata"
+      controls
+    ></video>
+  </body>
+</html>
