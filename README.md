@@ -1,6 +1,6 @@
 # PiP Anywhere
 
-PiP Anywhere is a Chrome, Firefox, and Edge extension for triggering native HTML5
+PiP Anywhere is a Chrome and Edge extension for triggering native HTML5
 picture-in-picture from a keyboard shortcut, the toolbar icon, or a hover
 overlay on video elements.
 
@@ -24,8 +24,8 @@ pnpm run dev:build
 pnpm run check
 ```
 
-Development builds are emitted to `dist-dev/{chrome,firefox,edge}`. Production
-builds are emitted to `dist/{chrome,firefox,edge}`.
+Development builds are emitted to `dist-dev/{chrome,edge}`. Production builds
+are emitted to `dist/{chrome,edge}`.
 
 For a repeatable local smoke test, open
 `fixtures/manual/pip-test.html` after loading a dev build. It includes a normal
@@ -38,15 +38,19 @@ Use `docs/manual-smoke.md` for the real-site smoke checklist before release.
 
 ## Commands
 
-| Task                   | Command                        |
-| ---------------------- | ------------------------------ |
-| Dev build all browsers | `pnpm run dev:build`           |
-| Build all browsers     | `pnpm run build`               |
-| Type check             | `pnpm run typecheck`           |
-| Unit test              | `pnpm run test`                |
-| E2E test               | `pnpm run test:e2e`            |
-| Headed E2E test        | `pnpm run test:e2e:headed`     |
-| Full check             | `pnpm run check`               |
-| Package zips           | `pnpm run package`             |
-| Firefox add-on lint    | `pnpm run lint:addons:firefox` |
-| Manual smoke checklist | `docs/manual-smoke.md`         |
+| Task                   | Command                    |
+| ---------------------- | -------------------------- |
+| Dev build Chrome/Edge  | `pnpm run dev:build`       |
+| Build Chrome/Edge      | `pnpm run build`           |
+| Type check             | `pnpm run typecheck`       |
+| Unit test              | `pnpm run test`            |
+| E2E test               | `pnpm run test:e2e`        |
+| Headed E2E test        | `pnpm run test:e2e:headed` |
+| Full check             | `pnpm run check`           |
+| Package zips           | `pnpm run package`         |
+| Manual smoke checklist | `docs/manual-smoke.md`     |
+
+Firefox is not an MVP release target. Native Firefox PiP already covers much of
+the product value, including its own override flow for video-level PiP opt-outs.
+Firefox build scripts remain available for experiments, but they are not part of
+the default build, package, or CI path.

@@ -41,9 +41,6 @@ jobs:
       - name: Package extensions
         run: pnpm run package
 
-      - name: Lint packaged Firefox add-on
-        run: pnpm run lint:addons:firefox:zip:built
-
       - name: Upload packaged extensions
         uses: actions/upload-artifact@v7
         with:

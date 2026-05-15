@@ -5,8 +5,8 @@ codebase.
 
 ## Project Overview
 
-PiP Anywhere is a Chrome, Firefox, and Edge MV3 extension that triggers native
-HTML5 picture-in-picture from:
+PiP Anywhere is a Chrome and Edge MV3 extension that triggers native HTML5
+picture-in-picture from:
 
 - a browser-managed hotkey command,
 - the extension toolbar icon,
@@ -51,21 +51,20 @@ dist-dev/           # development build output, git-ignored
 
 ## Commands
 
-| Task                | Command                        |
-| ------------------- | ------------------------------ |
-| Install deps        | `pnpm install`                 |
-| Format              | `pnpm run format`              |
-| Format check        | `pnpm run format:check`        |
-| Lint                | `pnpm run lint`                |
-| Type check          | `pnpm run typecheck`           |
-| Test                | `pnpm run test`                |
-| E2E test            | `pnpm run test:e2e`            |
-| Headed E2E test     | `pnpm run test:e2e:headed`     |
-| Dev build           | `pnpm run dev:build`           |
-| Production build    | `pnpm run build`               |
-| Full local check    | `pnpm run check`               |
-| Package store zips  | `pnpm run package`             |
-| Firefox add-on lint | `pnpm run lint:addons:firefox` |
+| Task               | Command                    |
+| ------------------ | -------------------------- |
+| Install deps       | `pnpm install`             |
+| Format             | `pnpm run format`          |
+| Format check       | `pnpm run format:check`    |
+| Lint               | `pnpm run lint`            |
+| Type check         | `pnpm run typecheck`       |
+| Test               | `pnpm run test`            |
+| E2E test           | `pnpm run test:e2e`        |
+| Headed E2E test    | `pnpm run test:e2e:headed` |
+| Dev build          | `pnpm run dev:build`       |
+| Production build   | `pnpm run build`           |
+| Full local check   | `pnpm run check`           |
+| Package store zips | `pnpm run package`         |
 
 ## Build
 
@@ -80,11 +79,11 @@ The project uses Vite with one config per browser and shared build logic in
 - Manifests live in `src/manifests/` and receive `package.json` version during
   build.
 - Icons are generated from `src/assets/icon.svg`.
-- Firefox builds are validated with Mozilla `addons-linter`; `pnpm run check`
-  lints `dist/firefox`, and `pnpm run lint:addons:firefox:zip` validates the
-  packaged Firefox zip.
-- CI runs the same checks, packages all browser zips, validates the Firefox zip,
-  and uploads the zip files as workflow artifacts.
+- Firefox is not an MVP release target. Keep Firefox build scripts available for
+  experiments, but do not let Firefox shape MVP product decisions unless the
+  target browser scope changes.
+- CI runs the same checks, packages Chrome and Edge zips, and uploads the zip
+  files as workflow artifacts.
 - Do not commit `dist/`, `dist-dev/`, `releases/`, or `node_modules/`.
 
 ## Code Conventions
@@ -112,8 +111,8 @@ The project uses Vite with one config per browser and shared build logic in
 - `requestPictureInPicture()` usually requires user activation. Toolbar clicks,
   command shortcuts, and overlay clicks preserve the best chance of activation;
   deferred or background-only calls can fail.
-- Firefox and Chromium differ in MV3 background behavior. Keep manifest
-  differences isolated in `src/manifests/`.
+- Firefox and Chromium differ in MV3 background behavior. Firefox support is
+  non-MVP; keep any Firefox-specific work isolated in `src/manifests/`.
 - Content scripts may run in iframes. Avoid global state that assumes a single
   top-level document.
 - Page-level browser policy can still block PiP. Do not claim that every block

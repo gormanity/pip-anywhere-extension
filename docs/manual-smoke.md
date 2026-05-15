@@ -7,9 +7,7 @@ release candidate.
 
 1. Run `pnpm run dev:build:chrome`.
 2. Load `dist-dev/chrome` as an unpacked extension in Chrome or Edge.
-3. For Firefox, run `pnpm run dev:build:firefox` and load `dist-dev/firefox`
-   through `about:debugging`.
-4. Open the options page and confirm shortcut text, hover delay, placement,
+3. Open the options page and confirm shortcut text, hover delay, placement,
    minimum duration, and unblocking settings render correctly.
 
 ## Local Fixture
@@ -24,8 +22,8 @@ Open `fixtures/manual/pip-test.html` and verify:
 
 ## Real Sites
 
-Check at least Chrome before release; include Firefox and Edge when touching
-browser-specific manifest or background behavior.
+Check Chrome before release; include Edge when touching browser-specific
+manifest or background behavior.
 
 - YouTube watch page: overlay appears on the main player, toolbar and shortcut
   work after page interaction.
