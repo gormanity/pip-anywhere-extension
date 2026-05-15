@@ -101,6 +101,22 @@ test("clears video-level PiP blocking attributes", async () => {
     .toEqual({ attribute: false, property: false });
 });
 
+test("suppresses youtube homepage thumbnail previews", async () => {
+  await page!.goto(`${server.youtubeOrigin}/youtube-fixture.html`);
+  await expectVideoDuration("#youtube-thumbnail-video", 45);
+  await hoverCenter(page!, "#youtube-thumbnail-video");
+
+  await expect(page!.locator(".ultimate-pip-overlay")).toBeHidden();
+});
+
+test("keeps youtube watch page videos eligible", async () => {
+  await page!.goto(`${server.youtubeOrigin}/watch`);
+  await expectVideoDuration("#youtube-watch-video", 45);
+  await hoverCenter(page!, "#youtube-watch-video");
+
+  await expect(page!.locator(".ultimate-pip-overlay")).toBeVisible();
+});
+
 test("autosaves options page changes and shows status text", async () => {
   await page!.goto(`chrome-extension://${extensionId}/options.html`);
   await page!.locator("#hover-delay-ms").fill("400");
