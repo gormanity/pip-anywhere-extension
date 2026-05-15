@@ -102,6 +102,21 @@ test("clears video-level PiP blocking attributes", async () => {
     .toEqual({ attribute: false, property: false });
 });
 
+test("leaves video-level PiP blocks alone when unblocking is disabled", async () => {
+  await setSettings({ unblockVideoPiP: false });
+  await page!.goto(`${server.origin}/pip-fixture.html`);
+  const blocked = page!.locator("#blocked-video");
+
+  await expect
+    .poll(async () =>
+      blocked.evaluate((video) => ({
+        attribute: video.hasAttribute("disablepictureinpicture"),
+        property: (video as HTMLVideoElement).disablePictureInPicture,
+      })),
+    )
+    .toEqual({ attribute: true, property: true });
+});
+
 test("suppresses youtube homepage thumbnail previews", async () => {
   await page!.goto(`${server.youtubeOrigin}/youtube-fixture.html`);
   await expectVideoDuration("#youtube-thumbnail-video", 45);
