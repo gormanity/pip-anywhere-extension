@@ -20,6 +20,7 @@
     "build:edge": "vite build --config vite.config.edge.ts",
     "build": "pnpm run build:chrome && pnpm run build:edge",
     "build:listings": "node scripts/build-listings.js",
+    "render:store-assets": "node scripts/render-store-assets.js",
     "package": "pnpm run build && node scripts/package.mjs",
     "test": "vitest run",
     "test:e2e": "pnpm run dev:build:chrome && playwright test",

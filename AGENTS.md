@@ -52,22 +52,23 @@ dist-dev/           # development build output, git-ignored
 
 ## Commands
 
-| Task                 | Command                     |
-| -------------------- | --------------------------- |
-| Install deps         | `pnpm install`              |
-| Format               | `pnpm run format`           |
-| Format check         | `pnpm run format:check`     |
-| Lint                 | `pnpm run lint`             |
-| Type check           | `pnpm run typecheck`        |
-| Test                 | `pnpm run test`             |
-| E2E test             | `pnpm run test:e2e`         |
-| Headed E2E test      | `pnpm run test:e2e:headed`  |
-| Dev build            | `pnpm run dev:build`        |
-| Production build     | `pnpm run build`            |
-| Build store listings | `pnpm run build:listings`   |
-| Full local check     | `pnpm run check`            |
-| Package store zips   | `pnpm run package`          |
-| Release checklist    | `docs/release-checklist.md` |
+| Task                 | Command                        |
+| -------------------- | ------------------------------ |
+| Install deps         | `pnpm install`                 |
+| Format               | `pnpm run format`              |
+| Format check         | `pnpm run format:check`        |
+| Lint                 | `pnpm run lint`                |
+| Type check           | `pnpm run typecheck`           |
+| Test                 | `pnpm run test`                |
+| E2E test             | `pnpm run test:e2e`            |
+| Headed E2E test      | `pnpm run test:e2e:headed`     |
+| Dev build            | `pnpm run dev:build`           |
+| Production build     | `pnpm run build`               |
+| Build store listings | `pnpm run build:listings`      |
+| Render store assets  | `pnpm run render:store-assets` |
+| Full local check     | `pnpm run check`               |
+| Package store zips   | `pnpm run package`             |
+| Release checklist    | `docs/release-checklist.md`    |
 
 ## Build
 
@@ -84,6 +85,8 @@ The project uses Vite with one config per browser and shared build logic in
 - Icons are generated from `src/assets/icon.svg`.
 - Store listing source lives in `store/listing.data.js`; generated per-store
   copy is written to `dist/store/` by `pnpm run build:listings`.
+- Store screenshots and promo images are HTML-authored under `store/` and
+  rendered to PNG with `pnpm run render:store-assets`.
 - Firefox is not an MVP release target. Keep Firefox build scripts available for
   experiments, but do not let Firefox shape MVP product decisions unless the
   target browser scope changes.
