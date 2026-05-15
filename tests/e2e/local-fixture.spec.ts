@@ -224,6 +224,57 @@ test("autosaves options page changes and shows status text", async () => {
     .toBe(400);
 });
 
+test("restores default options and persists them", async () => {
+  await setSettings({
+    hoverOverlayEnabled: false,
+    hoverDelayMs: 900,
+    minimumOverlayDurationSeconds: 0,
+    overlayCorner: "bottom-left",
+    overlayOffsetX: 40,
+    overlayOffsetY: 50,
+    unblockVideoPiP: false,
+  });
+
+  await page!.goto(`chrome-extension://${extensionId}/options.html`);
+  await page!.locator("#reset").click();
+
+  await expect(page!.locator("#status")).toHaveText(
+    "Default settings restored.",
+  );
+  await expect(page!.locator("#hover-delay-ms")).toHaveValue("250");
+  await expect(page!.locator("#minimum-overlay-duration")).toHaveValue("45");
+  await expect(page!.locator("#overlay-corner")).toHaveValue("top-right");
+  await expect(page!.locator("#overlay-offset-x")).toHaveValue("12");
+  await expect(page!.locator("#overlay-offset-y")).toHaveValue("12");
+  await expect(page!.locator("#hover-overlay-enabled")).toBeChecked();
+  await expect(page!.locator("#unblock-video-pip")).toBeChecked();
+
+  await expect
+    .poll(() => readStoredSettings())
+    .toMatchObject({
+      hoverOverlayEnabled: true,
+      hoverDelayMs: 250,
+      minimumOverlayDurationSeconds: 45,
+      overlayCorner: "top-right",
+      overlayOffsetX: 12,
+      overlayOffsetY: 12,
+      unblockVideoPiP: true,
+    });
+});
+
+test("shows shortcut text and opens browser shortcut management", async () => {
+  await page!.goto(`chrome-extension://${extensionId}/options.html`);
+
+  await expect(page!.locator("#shortcut")).not.toHaveValue("");
+  await expect(page!.locator("#shortcut")).toHaveAttribute("readonly", "");
+
+  const shortcutsPagePromise = context.waitForEvent("page");
+  await page!.locator("#manage-shortcut").click();
+  const shortcutsPage = await shortcutsPagePromise;
+  await expect(shortcutsPage).toHaveURL("chrome://extensions/shortcuts");
+  await shortcutsPage.close();
+});
+
 async function hoverCenter(page: Page, selector: string): Promise<void> {
   const target = page.locator(selector);
   await target.scrollIntoViewIfNeeded();
@@ -303,6 +354,20 @@ async function sendToggleMessageToPage(url: string): Promise<void> {
         });
       }),
     { targetUrl: url },
+  );
+}
+
+async function readStoredSettings(): Promise<TestSettings> {
+  const worker = context.serviceWorkers()[0];
+  if (!worker) throw new Error("Missing extension service worker");
+  return await worker.evaluate(
+    async (key) =>
+      new Promise<TestSettings>((resolve) => {
+        chrome.storage.sync.get([key], (result) => {
+          resolve(result[key] as TestSettings);
+        });
+      }),
+    "ultimatePip.settings",
   );
 }
 
