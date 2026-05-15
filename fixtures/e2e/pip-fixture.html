@@ -1,0 +1,98 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>PiP Anywhere E2E Fixture</title>
+    <style>
+      body {
+        margin: 0;
+        font-family:
+          system-ui,
+          -apple-system,
+          BlinkMacSystemFont,
+          "Segoe UI",
+          sans-serif;
+        background: #f8fafc;
+        color: #0f172a;
+      }
+
+      main {
+        width: min(900px, calc(100vw - 32px));
+        margin: 32px auto;
+        display: grid;
+        gap: 28px;
+      }
+
+      section {
+        display: grid;
+        gap: 10px;
+      }
+
+      video {
+        width: 640px;
+        max-width: 100%;
+        aspect-ratio: 16 / 9;
+        display: block;
+        background: linear-gradient(135deg, #0f172a, #334155);
+      }
+
+      .thumbnail-preview video {
+        width: 240px;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <section>
+        <h1>PiP Anywhere E2E Fixture</h1>
+        <p>Videos use local generated media assets for stable tests.</p>
+      </section>
+
+      <section>
+        <h2>Eligible video</h2>
+        <video
+          id="eligible-video"
+          src="/long.mp4"
+          preload="metadata"
+          controls
+        ></video>
+      </section>
+
+      <section>
+        <h2>Short video</h2>
+        <video
+          id="short-video"
+          src="/short.mp4"
+          preload="metadata"
+          controls
+        ></video>
+      </section>
+
+      <section>
+        <h2>Blocked video</h2>
+        <video
+          id="blocked-video"
+          src="/long.mp4"
+          preload="metadata"
+          controls
+          disablepictureinpicture
+          controlslist="noremoteplayback noplaybackrate"
+        ></video>
+      </section>
+
+      <section class="thumbnail-preview">
+        <h2>Muted preview</h2>
+        <video id="muted-preview" muted controls></video>
+      </section>
+    </main>
+
+    <script>
+      const blocked = document.getElementById("blocked-video");
+      window.setInterval(() => {
+        blocked.disablePictureInPicture = true;
+        blocked.setAttribute("disablepictureinpicture", "");
+      }, 500);
+    </script>
+  </body>
+</html>

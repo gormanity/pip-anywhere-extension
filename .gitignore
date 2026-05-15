@@ -2,5 +2,7 @@ node_modules/
 dist/
 dist-dev/
 releases/
+test-results/
+playwright-report/
 *.tsbuildinfo
 .DS_Store

@@ -29,6 +29,9 @@ src/
   assets/           # source SVG icon
   types/            # extension globals
 tests/              # Vitest unit tests for pure helpers
+tests/e2e/          # Playwright local fixture smoke tests
+fixtures/           # manual and automated local video fixtures
+docs/               # manual release smoke checklists and project notes
 scripts/            # packaging scripts
 dist/               # production build output, git-ignored
 dist-dev/           # development build output, git-ignored
@@ -56,6 +59,8 @@ dist-dev/           # development build output, git-ignored
 | Lint                | `pnpm run lint`                |
 | Type check          | `pnpm run typecheck`           |
 | Test                | `pnpm run test`                |
+| E2E test            | `pnpm run test:e2e`            |
+| Headed E2E test     | `pnpm run test:e2e:headed`     |
 | Dev build           | `pnpm run dev:build`           |
 | Production build    | `pnpm run build`               |
 | Full local check    | `pnpm run check`               |
@@ -97,7 +102,9 @@ The project uses Vite with one config per browser and shared build logic in
 ## Testing
 
 - Use Vitest for pure logic and small DOM units.
-- Do not add heavy browser automation unless a feature needs it.
+- Use Playwright for local unpacked-extension fixture smoke tests when browser
+  behavior matters. Keep those tests on local fixtures, not third-party sites.
+- Keep third-party site coverage in `docs/manual-smoke.md`.
 - Run `pnpm run check` before considering a feature complete.
 
 ## Pitfalls

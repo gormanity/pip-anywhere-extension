@@ -31,6 +31,11 @@ For a repeatable local smoke test, open
 `fixtures/manual/pip-test.html` after loading a dev build. It includes a normal
 video, a video that repeatedly tries to disable PiP, and an iframe video.
 
+Automated e2e tests load the unpacked Chrome dev build in Chromium and exercise
+the HTTP-served fixture in `fixtures/e2e/`.
+
+Use `docs/manual-smoke.md` for the real-site smoke checklist before release.
+
 ## Commands
 
 | Task                   | Command                        |
@@ -38,7 +43,10 @@ video, a video that repeatedly tries to disable PiP, and an iframe video.
 | Dev build all browsers | `pnpm run dev:build`           |
 | Build all browsers     | `pnpm run build`               |
 | Type check             | `pnpm run typecheck`           |
-| Test                   | `pnpm run test`                |
+| Unit test              | `pnpm run test`                |
+| E2E test               | `pnpm run test:e2e`            |
+| Headed E2E test        | `pnpm run test:e2e:headed`     |
 | Full check             | `pnpm run check`               |
 | Package zips           | `pnpm run package`             |
 | Firefox add-on lint    | `pnpm run lint:addons:firefox` |
+| Manual smoke checklist | `docs/manual-smoke.md`         |

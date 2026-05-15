@@ -25,15 +25,18 @@
     "lint:addons:firefox:zip": "pnpm run package && pnpm run lint:addons:firefox:zip:built",
     "lint:addons:firefox:zip:built": "addons-linter releases/ultimate-pip-$npm_package_version-firefox.zip",
     "test": "vitest run",
+    "test:e2e": "pnpm run dev:build:chrome && playwright test",
+    "test:e2e:headed": "pnpm run dev:build:chrome && HEADED=1 playwright test",
     "test:watch": "vitest",
     "typecheck": "tsc --noEmit",
     "lint": "eslint src/ tests/",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "check": "pnpm run format:check && pnpm run lint && pnpm run typecheck && pnpm run test && pnpm run build && pnpm run lint:addons:firefox:dist"
+    "check": "pnpm run format:check && pnpm run lint && pnpm run typecheck && pnpm run test && pnpm run test:e2e && pnpm run build && pnpm run lint:addons:firefox:dist"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
+    "@playwright/test": "^1.60.0",
     "@types/chrome": "^0.1.37",
     "@types/node": "^25.0.0",
     "addons-linter": "^10.5.0",
