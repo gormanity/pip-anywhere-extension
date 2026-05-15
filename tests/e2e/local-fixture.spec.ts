@@ -30,6 +30,7 @@ test.afterAll(async () => {
 test.beforeEach(async () => {
   await closePage(page);
   await closeExtensionPages();
+  await setSettings();
   page = await context.newPage();
 });
 
@@ -117,6 +118,67 @@ test("keeps youtube watch page videos eligible", async () => {
   await expect(page!.locator(".ultimate-pip-overlay")).toBeVisible();
 });
 
+test("disables the hover overlay when configured", async () => {
+  await setSettings({ hoverOverlayEnabled: false });
+  await page!.goto(`${server.origin}/pip-fixture.html`);
+  await expectVideoDuration("#eligible-video", 45);
+  await hoverCenter(page!, "#eligible-video");
+
+  await expect(page!.locator(".ultimate-pip-overlay")).toBeHidden();
+});
+
+test("applies minimum duration changes to an open page", async () => {
+  await page!.goto(`${server.origin}/pip-fixture.html`);
+  await expectVideoDuration("#short-video", 1);
+  await setSettings({ minimumOverlayDurationSeconds: 0 });
+  await hoverCenter(page!, "#short-video");
+
+  await expect(page!.locator(".ultimate-pip-overlay")).toBeVisible();
+});
+
+test("honors configured hover delay before showing the overlay", async () => {
+  await setSettings({ hoverDelayMs: 1000 });
+  await page!.goto(`${server.origin}/pip-fixture.html`);
+  await expectVideoDuration("#eligible-video", 45);
+  await hoverCenter(page!, "#eligible-video");
+
+  await expect(page!.locator(".ultimate-pip-overlay")).toBeHidden({
+    timeout: 300,
+  });
+  await expect(page!.locator(".ultimate-pip-overlay")).toBeVisible({
+    timeout: 1200,
+  });
+});
+
+test("positions the overlay from the configured corner and offsets", async () => {
+  await setSettings({
+    overlayCorner: "bottom-left",
+    overlayOffsetX: 24,
+    overlayOffsetY: 32,
+  });
+  await page!.goto(`${server.origin}/pip-fixture.html`);
+  await expectVideoDuration("#eligible-video", 45);
+  await hoverCenter(page!, "#eligible-video");
+  await expect(page!.locator(".ultimate-pip-overlay")).toBeVisible();
+
+  const videoBox = await page!.locator("#eligible-video").boundingBox();
+  const overlayBox = await page!.locator(".ultimate-pip-overlay").boundingBox();
+  if (!videoBox || !overlayBox) {
+    throw new Error("Missing overlay or video bounding box");
+  }
+
+  expect(Math.round(overlayBox.x - videoBox.x)).toBe(24);
+  const bottomDistance = Math.round(
+    videoBox.y + videoBox.height - overlayBox.y,
+  );
+  expect(bottomDistance).toBeGreaterThanOrEqual(
+    Math.round(overlayBox.height + 28),
+  );
+  expect(bottomDistance).toBeLessThanOrEqual(
+    Math.round(overlayBox.height + 32),
+  );
+});
+
 test("autosaves options page changes and shows status text", async () => {
   await page!.goto(`chrome-extension://${extensionId}/options.html`);
   await page!.locator("#hover-delay-ms").fill("400");
@@ -162,6 +224,34 @@ async function closeExtensionPages(): Promise<void> {
   );
 }
 
+async function setSettings(
+  overrides: Partial<TestSettings> = {},
+): Promise<void> {
+  const settingsPage = await context.newPage();
+  await settingsPage.goto(`chrome-extension://${extensionId}/options.html`);
+  await settingsPage.evaluate(
+    async ({ key, settings }) =>
+      new Promise<void>((resolve) => {
+        chrome.storage.sync.set({ [key]: settings }, () => resolve());
+      }),
+    {
+      key: "ultimatePip.settings",
+      settings: {
+        hoverOverlayEnabled: true,
+        hoverDelayMs: 250,
+        minimumOverlayDurationSeconds: 45,
+        overlayCorner: "top-right",
+        overlayOffsetX: 12,
+        overlayOffsetY: 12,
+        unblockVideoPiP: true,
+        debugLogging: false,
+        ...overrides,
+      },
+    },
+  );
+  await settingsPage.close();
+}
+
 async function expectVideoDuration(
   selector: string,
   minimumSeconds: number,
@@ -177,4 +267,15 @@ async function expectVideoDuration(
 
 async function wait(delayMs: number): Promise<void> {
   await new Promise((resolve) => setTimeout(resolve, delayMs));
+}
+
+interface TestSettings {
+  hoverOverlayEnabled: boolean;
+  hoverDelayMs: number;
+  minimumOverlayDurationSeconds: number;
+  overlayCorner: "top-right" | "top-left" | "bottom-right" | "bottom-left";
+  overlayOffsetX: number;
+  overlayOffsetY: number;
+  unblockVideoPiP: boolean;
+  debugLogging: boolean;
 }
