@@ -11,14 +11,16 @@ import {
   normalizeSettings,
   type PipSettings,
 } from "@/core/settings";
+import { createRuntimeCoordinator } from "@/core/runtime-coordinator";
 
 const OVERLAY_CLASS = "ultimate-pip-overlay";
 const TOAST_CLASS = "ultimate-pip-toast";
-const STYLE_ID = "ultimate-pip-style";
-const VIDEO_ATTRIBUTE = "data-ultimate-pip-observed";
-const INJECTED_SCRIPT_ID = "ultimate-pip-unblocker";
-const CONFIG_EVENT = "ultimate-pip.configure";
-const DIAGNOSTIC_EVENT = "ultimate-pip.diagnostic";
+const RUNTIME_KIND = __DEV__ ? "dev" : "prod";
+const STYLE_ID = `ultimate-pip-style-${RUNTIME_KIND}`;
+const VIDEO_ATTRIBUTE = `data-ultimate-pip-observed-${RUNTIME_KIND}`;
+const INJECTED_SCRIPT_ID = `ultimate-pip-unblocker-${RUNTIME_KIND}`;
+const CONFIG_EVENT = `ultimate-pip.configure.${RUNTIME_KIND}`;
+const DIAGNOSTIC_EVENT = `ultimate-pip.diagnostic.${RUNTIME_KIND}`;
 
 interface DiagnosticsState {
   videosObserved: number;
@@ -42,6 +44,16 @@ let pointerVideo: HTMLVideoElement | null = null;
 let overlayUpdateFrame: number | null = null;
 let pageUnblockerInjected = false;
 const api = getBrowserApi();
+let runtimeStarted = false;
+let runtimeGeneration = 0;
+let runtimeAbort: AbortController | null = null;
+let mutationObserver: MutationObserver | null = null;
+let storageChangeListener:
+  | Parameters<typeof api.storage.onChanged.addListener>[0]
+  | null = null;
+let runtimeMessageListener:
+  | Parameters<typeof api.runtime.onMessage.addListener>[0]
+  | null = null;
 const diagnostics: DiagnosticsState = {
   videosObserved: 0,
   overlaySkippedShortVideo: 0,
@@ -64,6 +76,13 @@ function recordDiagnostic(
 ): void {
   if (!__DEV__) return;
   log("diagnostic", event, { details, state: diagnostics });
+}
+
+function getRuntimeSignal(): AbortSignal {
+  if (!runtimeAbort) {
+    throw new Error("PiP Anywhere content runtime is not active");
+  }
+  return runtimeAbort.signal;
 }
 
 function ensureStyle(): void {
@@ -139,11 +158,15 @@ function createOverlay(): HTMLButtonElement {
       <rect x="12" y="11" width="7" height="5" rx="1" fill="currentColor"/>
     </svg>
   `;
-  button.addEventListener("click", (event) => {
-    event.preventDefault();
-    event.stopPropagation();
-    void triggerPiP(overlayVideo ?? findBestVideo());
-  });
+  button.addEventListener(
+    "click",
+    (event) => {
+      event.preventDefault();
+      event.stopPropagation();
+      void triggerPiP(overlayVideo ?? findBestVideo());
+    },
+    { signal: getRuntimeSignal() },
+  );
   document.documentElement.appendChild(button);
   return button;
 }
@@ -161,16 +184,24 @@ function getToast(): HTMLDivElement {
     toast.className = TOAST_CLASS;
     toast.setAttribute("role", "status");
     toast.setAttribute("aria-live", "polite");
-    toast.addEventListener("mouseenter", () => {
-      if (toastTimer !== null) {
-        window.clearTimeout(toastTimer);
-        toastTimer = null;
-      }
-    });
-    toast.addEventListener("mouseleave", () => {
-      if (!toastText || toastTimer !== null) return;
-      scheduleToastHide(1200);
-    });
+    toast.addEventListener(
+      "mouseenter",
+      () => {
+        if (toastTimer !== null) {
+          window.clearTimeout(toastTimer);
+          toastTimer = null;
+        }
+      },
+      { signal: getRuntimeSignal() },
+    );
+    toast.addEventListener(
+      "mouseleave",
+      () => {
+        if (!toastText || toastTimer !== null) return;
+        scheduleToastHide(1200);
+      },
+      { signal: getRuntimeSignal() },
+    );
     document.documentElement.appendChild(toast);
   }
   return toast;
@@ -412,9 +443,8 @@ function handleDocumentMouseMove(event: MouseEvent): void {
 }
 
 function observeVideo(video: HTMLVideoElement): void {
-  if (video.dataset.ultimatePipObserved === "true") return;
+  if (video.getAttribute(VIDEO_ATTRIBUTE) === "true") return;
   diagnostics.videosObserved += 1;
-  video.dataset.ultimatePipObserved = "true";
   video.setAttribute(VIDEO_ATTRIBUTE, "true");
   recordDiagnostic("video-observed", {
     readyState: video.readyState,
@@ -424,16 +454,28 @@ function observeVideo(video: HTMLVideoElement): void {
 
   if (settings.unblockVideoPiP) enableVideoPiP(video);
 
-  video.addEventListener("mouseenter", () => scheduleOverlay(video));
-  video.addEventListener("mousemove", scheduleOverlayPositionUpdate);
-  video.addEventListener("loadedmetadata", () => {
-    if (overlayVideo === video || pointerVideo === video) showOverlay(video);
+  video.addEventListener("mouseenter", () => scheduleOverlay(video), {
+    signal: getRuntimeSignal(),
   });
-  video.addEventListener("mouseleave", () => {
-    clearHoverTimer();
-    if (pointerVideo === video) pointerVideo = null;
-    hideOverlaySoon();
+  video.addEventListener("mousemove", scheduleOverlayPositionUpdate, {
+    signal: getRuntimeSignal(),
   });
+  video.addEventListener(
+    "loadedmetadata",
+    () => {
+      if (overlayVideo === video || pointerVideo === video) showOverlay(video);
+    },
+    { signal: getRuntimeSignal() },
+  );
+  video.addEventListener(
+    "mouseleave",
+    () => {
+      clearHoverTimer();
+      if (pointerVideo === video) pointerVideo = null;
+      hideOverlaySoon();
+    },
+    { signal: getRuntimeSignal() },
+  );
 }
 
 function observeVideos(root: ParentNode = document): void {
@@ -463,9 +505,10 @@ function injectPageUnblocker(): void {
   recordDiagnostic("page-unblocker-injecting");
   const script = document.createElement("script");
   script.id = INJECTED_SCRIPT_ID;
-  script.src = api.runtime.getURL("pip-unblocker.js");
+  script.src = `${api.runtime.getURL("pip-unblocker.js")}?runtime=${RUNTIME_KIND}`;
   script.onload = () => {
     script.remove();
+    if (!runtimeStarted) return;
     recordDiagnostic("page-unblocker-injected");
     dispatchUnblockerConfig();
   };
@@ -507,36 +550,54 @@ async function triggerPiP(video: HTMLVideoElement | null) {
   return result;
 }
 
-async function init(): Promise<void> {
+async function startContentRuntime(): Promise<void> {
+  if (runtimeStarted) return;
+  runtimeStarted = true;
+  runtimeAbort = new AbortController();
+  const generation = ++runtimeGeneration;
+
   try {
     settings = await loadSettings();
   } catch {
     settings = { ...DEFAULT_SETTINGS };
   }
+  if (!runtimeStarted || generation !== runtimeGeneration) return;
 
   if (settings.unblockVideoPiP) injectPageUnblocker();
-  window.addEventListener(DIAGNOSTIC_EVENT, (event) => {
-    if (!__DEV__ || !(event instanceof CustomEvent)) return;
-    const type =
-      typeof event.detail?.type === "string" ? event.detail.type : "unknown";
-    diagnostics.pageUnblockerEvents[type] =
-      (diagnostics.pageUnblockerEvents[type] ?? 0) + 1;
-    recordDiagnostic("page-unblocker-event", event.detail);
-  });
+  window.addEventListener(
+    DIAGNOSTIC_EVENT,
+    (event) => {
+      if (!__DEV__ || !(event instanceof CustomEvent)) return;
+      const type =
+        typeof event.detail?.type === "string" ? event.detail.type : "unknown";
+      diagnostics.pageUnblockerEvents[type] =
+        (diagnostics.pageUnblockerEvents[type] ?? 0) + 1;
+      recordDiagnostic("page-unblocker-event", event.detail);
+    },
+    { signal: getRuntimeSignal() },
+  );
   observeVideos();
-  document.addEventListener("mousemove", handleDocumentMouseMove, true);
-  window.addEventListener("scroll", scheduleOverlayPositionUpdate, true);
-  window.addEventListener("resize", scheduleOverlayPositionUpdate);
+  document.addEventListener("mousemove", handleDocumentMouseMove, {
+    capture: true,
+    signal: getRuntimeSignal(),
+  });
+  window.addEventListener("scroll", scheduleOverlayPositionUpdate, {
+    capture: true,
+    signal: getRuntimeSignal(),
+  });
+  window.addEventListener("resize", scheduleOverlayPositionUpdate, {
+    signal: getRuntimeSignal(),
+  });
 
-  const observer = new MutationObserver(handleMutations);
-  observer.observe(document.documentElement, {
+  mutationObserver = new MutationObserver(handleMutations);
+  mutationObserver.observe(document.documentElement, {
     attributes: true,
     attributeFilter: ["disablepictureinpicture", "controlslist"],
     childList: true,
     subtree: true,
   });
 
-  api.storage.onChanged.addListener((changes, areaName) => {
+  storageChangeListener = (changes, areaName) => {
     const next = changes[SETTINGS_KEY];
     if (areaName === "sync" && next) {
       settings = normalizeSettings(next.newValue);
@@ -547,13 +608,76 @@ async function init(): Promise<void> {
       }
       observeVideos();
     }
-  });
+  };
+  api.storage.onChanged.addListener(storageChangeListener);
 
-  api.runtime.onMessage.addListener((message, _sender, sendResponse) => {
+  runtimeMessageListener = (message, _sender, sendResponse) => {
     if (message?.type !== "ultimate-pip.toggle") return false;
     void triggerPiP(findBestVideo()).then(sendResponse);
     return true;
-  });
+  };
+  api.runtime.onMessage.addListener(runtimeMessageListener);
 }
 
-void init();
+function stopContentRuntime(): void {
+  if (!runtimeStarted) return;
+  runtimeStarted = false;
+  runtimeGeneration += 1;
+
+  if (pageUnblockerInjected) {
+    window.dispatchEvent(
+      new CustomEvent(CONFIG_EVENT, {
+        detail: {
+          enabled: false,
+          debug: false,
+        },
+      }),
+    );
+  }
+
+  runtimeAbort?.abort();
+  runtimeAbort = null;
+  mutationObserver?.disconnect();
+  mutationObserver = null;
+
+  if (storageChangeListener) {
+    api.storage.onChanged.removeListener(storageChangeListener);
+    storageChangeListener = null;
+  }
+  if (runtimeMessageListener) {
+    api.runtime.onMessage.removeListener(runtimeMessageListener);
+    runtimeMessageListener = null;
+  }
+
+  clearHoverTimer();
+  if (toastTimer !== null) {
+    window.clearTimeout(toastTimer);
+    toastTimer = null;
+  }
+  if (overlayUpdateFrame !== null) {
+    window.cancelAnimationFrame(overlayUpdateFrame);
+    overlayUpdateFrame = null;
+  }
+
+  overlay?.remove();
+  toast?.remove();
+  document.getElementById(STYLE_ID)?.remove();
+  for (const video of document.querySelectorAll(`[${VIDEO_ATTRIBUTE}]`)) {
+    video.removeAttribute(VIDEO_ATTRIBUTE);
+  }
+
+  overlay = null;
+  overlayVideo = null;
+  toast = null;
+  toastText = null;
+  hoverTargetVideo = null;
+  pointerVideo = null;
+}
+
+createRuntimeCoordinator({
+  isDev: __DEV__,
+  startActive: () => {
+    void startContentRuntime();
+  },
+  stopActive: stopContentRuntime,
+}).start();

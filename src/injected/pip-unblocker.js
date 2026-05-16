@@ -1,4 +1,11 @@
 (() => {
+  const currentScript = document.currentScript;
+  const scriptSrc =
+    currentScript && "src" in currentScript ? currentScript.src : "";
+  const runtime = /[?&]runtime=(dev|prod)\b/.exec(scriptSrc)?.[1];
+  const runtimeKind = runtime === "dev" ? "dev" : "prod";
+  const configEvent = `ultimate-pip.configure.${runtimeKind}`;
+  const diagnosticEvent = `ultimate-pip.diagnostic.${runtimeKind}`;
   const state = {
     enabled: true,
     debug: false,
@@ -14,7 +21,7 @@
 
   function emitDiagnostic(type, detail = {}) {
     window.dispatchEvent(
-      new CustomEvent("ultimate-pip.diagnostic", {
+      new CustomEvent(diagnosticEvent, {
         detail: { type, ...detail },
       }),
     );
@@ -108,7 +115,7 @@
     });
   }
 
-  window.addEventListener("ultimate-pip.configure", (event) => {
+  window.addEventListener(configEvent, (event) => {
     const detail = event instanceof CustomEvent ? event.detail : {};
     state.enabled = detail?.enabled !== false;
     state.debug = detail?.debug === true;
