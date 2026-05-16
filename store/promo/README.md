@@ -16,4 +16,5 @@ Recommended output sizes:
 | Marquee promo | 1400 x 560 |
 
 Do not overpromise unblocking. Use language like "best-effort unblocking" in
-listing copy and keep promo art focused on user controls.
+listing copy and keep promo art focused on user controls, privacy, and the
+product name.
