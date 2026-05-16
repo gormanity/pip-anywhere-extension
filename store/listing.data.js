@@ -4,11 +4,11 @@
 export default {
   meta: {
     name: "PiP Anywhere",
-    officialUrl: "https://github.com/gormanity/ultimate-pip-extension",
-    homepageUrl: "https://github.com/gormanity/ultimate-pip-extension",
-    supportUrl: "https://github.com/gormanity/ultimate-pip-extension/issues",
+    officialUrl: "https://github.com/gormanity/pip-anywhere-extension",
+    homepageUrl: "https://github.com/gormanity/pip-anywhere-extension",
+    supportUrl: "https://github.com/gormanity/pip-anywhere-extension/issues",
     privacyPolicyUrl:
-      "https://github.com/gormanity/ultimate-pip-extension/blob/main/store/privacy-policy.md",
+      "https://github.com/gormanity/pip-anywhere-extension/blob/main/store/privacy-policy.md",
     language: "English (en-US)",
     supportEmail: null,
     license: "MIT",
@@ -42,11 +42,11 @@ PiP Anywhere cannot bypass every browser-level restriction. In particular, brows
 
 PRIVACY
 
-No personal data is collected or transmitted. The extension stores only your preferences in your browser's built-in sync storage. No analytics, tracking, accounts, or external services are used. Full privacy policy: https://github.com/gormanity/ultimate-pip-extension/blob/main/store/privacy-policy.md
+No personal data is collected or transmitted. The extension stores only your preferences in your browser's built-in sync storage. No analytics, tracking, accounts, or external services are used. Full privacy policy: https://github.com/gormanity/pip-anywhere-extension/blob/main/store/privacy-policy.md
 
 OPEN SOURCE
 
-Source code: https://github.com/gormanity/ultimate-pip-extension`,
+Source code: https://github.com/gormanity/pip-anywhere-extension`,
 
     versionNotes: `Initial release candidate. Adds keyboard, toolbar, and hover-overlay picture-in-picture controls for HTML5 video, configurable overlay behavior, and best-effort video-level PiP unblocking.`,
   },

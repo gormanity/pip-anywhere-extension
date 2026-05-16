@@ -65,11 +65,11 @@ None. The extension makes no network requests.
 ## Changes to this policy
 
 Any future changes will be reflected in the extension's GitHub repository:
-https://github.com/gormanity/ultimate-pip-extension
+https://github.com/gormanity/pip-anywhere-extension
 
 ---
 
 ## Contact
 
 To report a concern, open an issue at:
-https://github.com/gormanity/ultimate-pip-extension/issues
+https://github.com/gormanity/pip-anywhere-extension/issues
