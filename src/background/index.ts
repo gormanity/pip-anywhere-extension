@@ -51,6 +51,16 @@ function scoreVideosInFrame(): FrameVideoCandidate {
 }
 
 async function directTogglePiPInFrame(): Promise<DirectPipResult> {
+  const localHotkeyHandledAt = (globalThis as Record<string, unknown>)[
+    "__pipAnywhereLastLocalHotkeyAt"
+  ];
+  if (
+    typeof localHotkeyHandledAt === "number" &&
+    Date.now() - localHotkeyHandledAt < 1200
+  ) {
+    return { ok: true, score: Number.MAX_SAFE_INTEGER };
+  }
+
   function scoreVideo(video: HTMLVideoElement): number {
     const rect = video.getBoundingClientRect();
     const visibleArea = Math.max(0, rect.width) * Math.max(0, rect.height);

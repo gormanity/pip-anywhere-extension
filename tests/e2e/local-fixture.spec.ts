@@ -269,6 +269,21 @@ test("enters native PiP from the hover overlay click", async () => {
     .toBe("eligible-video");
 });
 
+test("enters native PiP from the default page hotkey", async () => {
+  await page!.goto(`${server.origin}/pip-fixture.html`);
+  await expectVideoDuration("#eligible-video", 45);
+  await page!.locator("#eligible-video").click();
+  await page!.keyboard.press("Alt+Shift+P");
+
+  await expect
+    .poll(() =>
+      page!.evaluate(() => {
+        return document.pictureInPictureElement?.id ?? null;
+      }),
+    )
+    .toBe("eligible-video");
+});
+
 test("shows no-video feedback from an extension toggle message", async () => {
   await page!.goto(`${server.origin}/empty-fixture.html`);
   await sendToggleMessageToPage(`${server.origin}/empty-fixture.html`);
