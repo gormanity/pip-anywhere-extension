@@ -16,20 +16,22 @@ export default {
 
   copy: {
     shortDescription:
-      "Keyboard, toolbar, and hover picture-in-picture controls for HTML5 video.",
+      "Keyboard, video picker, and hover picture-in-picture controls for HTML5 video.",
 
     detailedDescription: `PiP Anywhere gives you faster, more reliable picture-in-picture controls for HTML5 video in Chrome and Edge.
 
-Native browser PiP is useful, but the controls can be hidden, inconsistent, or blocked by video sites. PiP Anywhere adds a consistent command layer so you can pop videos out from the keyboard, toolbar, or an on-video hover button.
+Native browser PiP is useful, but the controls can be hidden, inconsistent, or blocked by video sites. PiP Anywhere adds a consistent command layer so you can pop videos out from the keyboard, a toolbar video picker, or an on-video hover button.
 
 FEATURES
 
 • Hover overlay — show a PiP button directly over eligible videos
 • Browser shortcut — toggle PiP from a configurable extension command
-• Toolbar action — click the extension icon to toggle PiP for the best video on the page
+• Toolbar video picker — click the extension icon, highlight page videos, then choose the one to pop out
 • Best-effort unblocking — clears video-level PiP blocks such as disablePictureInPicture when possible
 • Smarter preview handling — suppresses noisy overlays on short videos and YouTube homepage previews
-• Configurable behavior — set hover delay, minimum video length, overlay corner, and X/Y offsets
+• Configurable behavior — set hover delay, minimum video length, drag-based overlay placement, hover icon size, hover icon opacity, and idle hiding
+• Site rules — disable the extension on matching hosts or URL regex patterns
+• Settings portability — import and export your options as JSON
 • Useful feedback — shows clear messages when the browser requires page interaction or no eligible video exists
 
 WHY IT EXISTS
@@ -48,7 +50,7 @@ OPEN SOURCE
 
 Source code: https://github.com/gormanity/pip-anywhere-extension`,
 
-    versionNotes: `Initial release candidate. Adds keyboard, toolbar, and hover-overlay picture-in-picture controls for HTML5 video, configurable overlay behavior, and best-effort video-level PiP unblocking.`,
+    versionNotes: `Initial release candidate. Adds keyboard, toolbar video picker, and hover-overlay picture-in-picture controls for HTML5 video, configurable overlay behavior, per-site disabling, settings import/export, and best-effort video-level PiP unblocking.`,
   },
 
   categories: {
@@ -62,8 +64,8 @@ Source code: https://github.com/gormanity/pip-anywhere-extension`,
     verification: [
       "Load any page with an HTML5 video, such as a normal YouTube watch page, then hover the video to see the PiP overlay button.",
       "Click the hover overlay button to request native picture-in-picture for that video.",
-      "Click the extension toolbar icon on a video page to toggle PiP for the best eligible video.",
-      "Open the options page to adjust hover delay, minimum video length, overlay corner, X/Y offsets, and video-level unblocking.",
+      "Click the extension toolbar icon on a video page to highlight videos, then click a highlighted video to request PiP.",
+      "Open the options page to adjust hover delay, minimum video length, drag-based overlay placement, hover icon size, hover icon opacity, idle hiding, per-site disable rules, settings import/export, and video-level unblocking.",
       "The extension uses `chrome.storage.sync` only for user preferences.",
       "The extension does not use remote code, external services, analytics, tracking, accounts, or network requests.",
       "Browser-level user activation, Permissions Policy, and DRM restrictions may still prevent PiP on some pages.",
@@ -75,7 +77,7 @@ Source code: https://github.com/gormanity/pip-anywhere-extension`,
 
   chrome: {
     singlePurpose:
-      "Adds keyboard, toolbar, and hover-overlay controls for triggering native picture-in-picture on HTML5 video pages in Chrome and Edge.",
+      "Adds keyboard, toolbar video picker, and hover-overlay controls for triggering native picture-in-picture on HTML5 video pages in Chrome and Edge.",
 
     remoteCodeJustification:
       "This extension does not use remote code. All scripts, styles, and resources are bundled into the extension package at build time via Vite and shipped inside the .zip submitted to the store.",
@@ -84,7 +86,7 @@ Source code: https://github.com/gormanity/pip-anywhere-extension`,
       {
         permission: "`activeTab`",
         justification:
-          "Allows the toolbar action and keyboard command to target the currently active tab when the user explicitly invokes PiP.",
+          "Allows the toolbar video picker and keyboard command to target the currently active tab when the user explicitly invokes PiP.",
       },
       {
         permission: "`scripting`",
@@ -94,7 +96,7 @@ Source code: https://github.com/gormanity/pip-anywhere-extension`,
       {
         permission: "`storage`",
         justification:
-          "Stores user preferences such as hover delay, overlay placement, minimum video length, and PiP unblocking behavior using browser sync storage.",
+          "Stores user preferences such as hover delay, overlay placement, hover icon size, hover icon opacity, minimum video length, site disable rules, and PiP unblocking behavior using browser sync storage.",
       },
       {
         permission: "Host permission: `<all_urls>`",

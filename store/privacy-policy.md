@@ -20,10 +20,13 @@ The extension stores these preferences using the browser's `storage.sync` API:
 | `hoverOverlayEnabled`           | boolean | Whether the hover overlay button is enabled           |
 | `hoverDelayMs`                  | number  | Delay before showing the hover overlay                |
 | `minimumOverlayDurationSeconds` | number  | Minimum video length for hover overlay eligibility    |
-| `overlayCorner`                 | string  | Preferred overlay corner                              |
-| `overlayOffsetX`                | number  | Horizontal overlay offset                             |
-| `overlayOffsetY`                | number  | Vertical overlay offset                               |
+| `overlayPositionXPercent`       | number  | Horizontal overlay position within the video          |
+| `overlayPositionYPercent`       | number  | Vertical overlay position within the video            |
+| `overlayOpacityPercent`         | number  | Hover overlay opacity                                 |
+| `overlaySizePx`                 | number  | Hover overlay button size                             |
+| `overlayIdleHideMs`             | number  | Idle delay before hiding the hover overlay            |
 | `unblockVideoPiP`               | boolean | Whether to clear video-level PiP blocks when possible |
+| `disabledSitePatterns`          | array   | User-entered site disable hostnames or URL regexes    |
 | `debugLogging`                  | boolean | Development-build-only diagnostic logging preference  |
 
 These values are stored locally in your browser and may sync through your

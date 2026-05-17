@@ -165,7 +165,7 @@ test("honors configured hover delay before showing the overlay", async () => {
   });
 });
 
-test("positions the overlay from the configured corner and offsets", async () => {
+test("positions the overlay from configured percentage placement", async () => {
   await setSettings({
     overlayPositionXPercent: 20,
     overlayPositionYPercent: 80,

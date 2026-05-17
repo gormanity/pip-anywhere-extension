@@ -37,8 +37,9 @@ that every browser-enforced policy can be bypassed.
 
 Message: "Fully customizable"
 
-Show the options page with hover delay, minimum duration, placement, offsets,
-and unblocking visible. The UI should be readable at store screenshot size.
+Show the options page with hover delay, minimum duration, drag-based placement,
+icon style, site rules, and unblocking visible. The UI should be readable at
+store screenshot size.
 
 ### 05-privacy
 

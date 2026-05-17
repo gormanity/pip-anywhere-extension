@@ -7,11 +7,12 @@ overlay on video elements.
 ## Features
 
 - Browser command for toggling PiP on the active tab.
-- Toolbar action that sends the same PiP toggle to the active tab.
-- Hover overlay button for HTML5 video elements.
+- Toolbar action that highlights page videos so you can choose the PiP target.
+- Hover overlay button for HTML5 video elements, with configurable placement,
+  size, opacity, delay, idle hiding, and minimum video length.
 - Best-effort clearing of video-level `disablePictureInPicture` blocks.
-- Options page for hover delay, minimum video length, overlay placement and
-  offsets, PiP unblocking, shortcut management, and dev-only debug logging.
+- Options page for shortcut management, import/export, per-site disable rules
+  with regex support, PiP unblocking, and dev-only debug logging.
 
 Browser-enforced site policies may still prevent PiP on some pages. The
 extension removes blocks it can control at the video element level.
