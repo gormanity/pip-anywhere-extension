@@ -151,8 +151,13 @@ async function sendToggleToFrame(
   await api.tabs.sendMessage(tabId, TOGGLE_MESSAGE, { frameId });
 }
 
-async function sendToggleToActiveTab(): Promise<void> {
+async function getActiveTab(): Promise<chrome.tabs.Tab | undefined> {
   const [tab] = await api.tabs.query({ active: true, currentWindow: true });
+  return tab;
+}
+
+async function sendToggleToTab(tab?: chrome.tabs.Tab): Promise<void> {
+  tab ??= await getActiveTab();
   if (!tab?.id) return;
 
   if (await directToggleInBestFrame(tab.id).catch(() => false)) {
@@ -176,8 +181,8 @@ async function sendToggleToActiveTab(): Promise<void> {
   }
 }
 
-async function sendSelectToActiveTab(): Promise<void> {
-  const [tab] = await api.tabs.query({ active: true, currentWindow: true });
+async function sendSelectToTab(tab?: chrome.tabs.Tab): Promise<void> {
+  tab ??= await getActiveTab();
   if (!tab?.id) return;
 
   try {
@@ -230,11 +235,11 @@ api.runtime.onStartup.addListener(() => {
   void injectContentIntoOpenTabs();
 });
 
-api.commands.onCommand.addListener((command) => {
+api.commands.onCommand.addListener((command, tab) => {
   if (command !== "toggle-picture-in-picture") return;
-  void sendToggleToActiveTab();
+  void sendToggleToTab(tab);
 });
 
-api.action.onClicked.addListener(() => {
-  void sendSelectToActiveTab();
+api.action.onClicked.addListener((tab) => {
+  void sendSelectToTab(tab);
 });
