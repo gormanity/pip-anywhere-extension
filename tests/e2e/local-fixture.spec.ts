@@ -346,6 +346,21 @@ test("highlights videos for explicit selection mode", async () => {
     .not.toBeNull();
 });
 
+test("cancels explicit video selection from outside click and escape", async () => {
+  await page!.goto(`${server.origin}/pip-fixture.html`);
+  await expectVideoDuration("#eligible-video", 45);
+
+  await sendSelectMessageToPage(`${server.origin}/pip-fixture.html`);
+  await expect(page!.locator(".ultimate-pip-video-target")).toHaveCount(5);
+  await page!.mouse.click(4, 4);
+  await expect(page!.locator(".ultimate-pip-video-target")).toHaveCount(0);
+
+  await sendSelectMessageToPage(`${server.origin}/pip-fixture.html`);
+  await expect(page!.locator(".ultimate-pip-video-target")).toHaveCount(5);
+  await page!.keyboard.press("Escape");
+  await expect(page!.locator(".ultimate-pip-video-target")).toHaveCount(0);
+});
+
 test("autosaves options page changes and shows status text", async () => {
   await page!.goto(`chrome-extension://${extensionId}/options.html`);
   await page!.locator("#hover-delay-ms").fill("400");

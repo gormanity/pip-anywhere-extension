@@ -674,6 +674,14 @@ function handleDocumentMouseMove(event: MouseEvent): void {
   scheduleOverlay(video);
 }
 
+function handleDocumentPointerDown(event: PointerEvent): void {
+  if (selectionTargets.length === 0) return;
+  if (event.target instanceof Element) {
+    if (event.target.closest(`.${VIDEO_TARGET_CLASS}`)) return;
+  }
+  clearVideoSelection();
+}
+
 function handleDocumentKeyDown(event: KeyboardEvent): void {
   if (event.key === "Escape") {
     clearVideoSelection();
@@ -861,6 +869,10 @@ async function startContentRuntime(): Promise<void> {
   );
   observeVideos();
   document.addEventListener("mousemove", handleDocumentMouseMove, {
+    capture: true,
+    signal: getRuntimeSignal(),
+  });
+  document.addEventListener("pointerdown", handleDocumentPointerDown, {
     capture: true,
     signal: getRuntimeSignal(),
   });
