@@ -4,6 +4,8 @@ import { ensureDefaultSettings } from "@/core/settings";
 const api = getBrowserApi();
 const TOGGLE_MESSAGE = { type: "ultimate-pip.toggle" };
 const SELECT_MESSAGE = { type: "ultimate-pip.select-video" };
+const UNSCRIPTABLE_URL_PATTERN =
+  /^(about|chrome|chrome-extension|edge|moz-extension):/i;
 
 interface FrameVideoCandidate {
   hasVideo: boolean;
@@ -183,8 +185,31 @@ async function sendSelectToActiveTab(): Promise<void> {
   }
 }
 
+function isScriptableTab(tab: chrome.tabs.Tab): tab is chrome.tabs.Tab & {
+  id: number;
+} {
+  if (typeof tab.id !== "number") return false;
+  if (!tab.url) return true;
+  return !UNSCRIPTABLE_URL_PATTERN.test(tab.url);
+}
+
+async function injectContentIntoTab(tabId: number): Promise<void> {
+  await api.scripting.executeScript({
+    target: { tabId, allFrames: true },
+    files: ["content.js"],
+  });
+}
+
+async function injectContentIntoOpenTabs(): Promise<void> {
+  const tabs = await api.tabs.query({});
+  await Promise.allSettled(
+    tabs.filter(isScriptableTab).map((tab) => injectContentIntoTab(tab.id)),
+  );
+}
+
 api.runtime.onInstalled.addListener((details) => {
   void ensureDefaultSettings();
+  void injectContentIntoOpenTabs();
   if (details.reason === "install") {
     void api.runtime.openOptionsPage();
   }
@@ -192,6 +217,7 @@ api.runtime.onInstalled.addListener((details) => {
 
 api.runtime.onStartup.addListener(() => {
   void ensureDefaultSettings();
+  void injectContentIntoOpenTabs();
 });
 
 api.commands.onCommand.addListener((command) => {

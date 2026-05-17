@@ -23,6 +23,7 @@ const VIDEO_ATTRIBUTE = `data-ultimate-pip-observed-${RUNTIME_KIND}`;
 const INJECTED_SCRIPT_ID = `ultimate-pip-unblocker-${RUNTIME_KIND}`;
 const CONFIG_EVENT = `ultimate-pip.configure.${RUNTIME_KIND}`;
 const DIAGNOSTIC_EVENT = `ultimate-pip.diagnostic.${RUNTIME_KIND}`;
+const GLOBAL_RUNTIME_KEY = `__pipAnywhereContentRuntime_${RUNTIME_KIND}`;
 
 interface DiagnosticsState {
   videosObserved: number;
@@ -873,10 +874,19 @@ function stopContentRuntime(): void {
   pointerVideo = null;
 }
 
-createRuntimeCoordinator({
+const runtimeGlobals = globalThis as unknown as Record<
+  string,
+  ReturnType<typeof createRuntimeCoordinator>
+>;
+const existingRuntime = runtimeGlobals[GLOBAL_RUNTIME_KEY];
+existingRuntime?.stop();
+
+runtimeGlobals[GLOBAL_RUNTIME_KEY] = createRuntimeCoordinator({
   isDev: __DEV__,
   startActive: () => {
     void startContentRuntime();
   },
   stopActive: stopContentRuntime,
-}).start();
+});
+
+runtimeGlobals[GLOBAL_RUNTIME_KEY].start();
