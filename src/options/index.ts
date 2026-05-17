@@ -334,8 +334,9 @@ function validateSiteRule(
 
 function syncPositionPicker(settings: PipSettings): void {
   const handle = byId<HTMLButtonElement>("overlay-position-handle");
-  handle.style.left = `${settings.overlayPositionXPercent}%`;
-  handle.style.top = `${settings.overlayPositionYPercent}%`;
+  const handleRadius = settings.overlaySizePx / 2;
+  handle.style.left = `calc(${handleRadius}px + (100% - ${settings.overlaySizePx}px) * ${settings.overlayPositionXPercent / 100})`;
+  handle.style.top = `calc(${handleRadius}px + (100% - ${settings.overlaySizePx}px) * ${settings.overlayPositionYPercent / 100})`;
   handle.style.width = `${settings.overlaySizePx}px`;
   handle.style.height = `${settings.overlaySizePx}px`;
   handle.style.opacity = String(settings.overlayOpacityPercent / 100);

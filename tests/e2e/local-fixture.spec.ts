@@ -398,6 +398,38 @@ test("manages disabled site rules with wildcard validation", async () => {
     .toMatchObject({ disabledSitePatterns: [] });
 });
 
+test("keeps overlay placement preview fully visible at picker edges", async () => {
+  await setSettings({
+    overlayPositionXPercent: 100,
+    overlayPositionYPercent: 0,
+    overlaySizePx: 42,
+  });
+  await page!.goto(`chrome-extension://${extensionId}/options.html`);
+
+  const pickerBox = await page!
+    .locator("#overlay-position-picker")
+    .boundingBox();
+  const handleBox = await page!
+    .locator("#overlay-position-handle")
+    .boundingBox();
+  if (!pickerBox || !handleBox) {
+    throw new Error("Missing position picker or handle box");
+  }
+
+  expect(handleBox.x).toBeGreaterThanOrEqual(pickerBox.x);
+  expect(handleBox.y).toBeGreaterThanOrEqual(pickerBox.y);
+  expect(handleBox.x + handleBox.width).toBeLessThanOrEqual(
+    pickerBox.x + pickerBox.width,
+  );
+  expect(handleBox.y + handleBox.height).toBeLessThanOrEqual(
+    pickerBox.y + pickerBox.height,
+  );
+  await expect(page!.locator("#overlay-position-x-output")).toHaveText(
+    "X 100%",
+  );
+  await expect(page!.locator("#overlay-position-y-output")).toHaveText("Y 0%");
+});
+
 test("restores default options and persists them", async () => {
   await setSettings({
     hoverOverlayEnabled: false,
