@@ -352,7 +352,8 @@ textarea {
   line-height: 1.4;
 }
 
-button {
+button,
+.import-button {
   min-height: 38px;
   border: 1px solid transparent;
   border-radius: 8px;
@@ -469,7 +470,7 @@ button {
     margin-left: 0;
   }
 
-  .actions button {
+  .actions .secondary-button {
     flex: 1;
   }
 }
