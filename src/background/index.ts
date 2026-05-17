@@ -3,6 +3,7 @@ import { ensureDefaultSettings } from "@/core/settings";
 
 const api = getBrowserApi();
 const TOGGLE_MESSAGE = { type: "ultimate-pip.toggle" };
+const SELECT_MESSAGE = { type: "ultimate-pip.select-video" };
 
 interface FrameVideoCandidate {
   hasVideo: boolean;
@@ -163,6 +164,25 @@ async function sendToggleToActiveTab(): Promise<void> {
   }
 }
 
+async function sendSelectToActiveTab(): Promise<void> {
+  const [tab] = await api.tabs.query({ active: true, currentWindow: true });
+  if (!tab?.id) return;
+
+  try {
+    await api.tabs.sendMessage(tab.id, SELECT_MESSAGE);
+  } catch {
+    try {
+      await api.scripting.executeScript({
+        target: { tabId: tab.id, allFrames: true },
+        files: ["content.js"],
+      });
+      await api.tabs.sendMessage(tab.id, SELECT_MESSAGE);
+    } catch {
+      // Pages like browser internals and extension stores cannot be scripted.
+    }
+  }
+}
+
 api.runtime.onInstalled.addListener((details) => {
   void ensureDefaultSettings();
   if (details.reason === "install") {
@@ -180,5 +200,5 @@ api.commands.onCommand.addListener((command) => {
 });
 
 api.action.onClicked.addListener(() => {
-  void sendToggleToActiveTab();
+  void sendSelectToActiveTab();
 });

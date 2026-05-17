@@ -7,6 +7,7 @@ import { getBrowserApi } from "@/core/browser";
 import {
   DEFAULT_SETTINGS,
   SETTINGS_KEY,
+  isSiteDisabled,
   loadSettings,
   normalizeSettings,
   type PipSettings,
@@ -15,6 +16,7 @@ import { createRuntimeCoordinator } from "@/core/runtime-coordinator";
 
 const OVERLAY_CLASS = "ultimate-pip-overlay";
 const TOAST_CLASS = "ultimate-pip-toast";
+const VIDEO_TARGET_CLASS = "ultimate-pip-video-target";
 const RUNTIME_KIND = __DEV__ ? "dev" : "prod";
 const STYLE_ID = `ultimate-pip-style-${RUNTIME_KIND}`;
 const VIDEO_ATTRIBUTE = `data-ultimate-pip-observed-${RUNTIME_KIND}`;
@@ -39,9 +41,15 @@ let toast: HTMLDivElement | null = null;
 let toastTimer: number | null = null;
 let toastText: string | null = null;
 let hoverTimer: number | null = null;
+let overlayIdleTimer: number | null = null;
 let hoverTargetVideo: HTMLVideoElement | null = null;
 let pointerVideo: HTMLVideoElement | null = null;
 let overlayUpdateFrame: number | null = null;
+let selectionUpdateFrame: number | null = null;
+let selectionTargets: Array<{
+  video: HTMLVideoElement;
+  element: HTMLButtonElement;
+}> = [];
 let pageUnblockerInjected = false;
 const api = getBrowserApi();
 let runtimeStarted = false;
@@ -143,6 +151,32 @@ function ensureStyle(): void {
       opacity: 1;
       transform: translate(-50%, 0);
     }
+    .${VIDEO_TARGET_CLASS} {
+      position: fixed;
+      z-index: 2147483646;
+      border: 3px solid #f59f00;
+      border-radius: 10px;
+      background: rgba(245, 159, 0, 0.14);
+      box-shadow:
+        0 0 0 9999px rgba(15, 23, 42, 0.18),
+        0 14px 36px rgba(15, 23, 42, 0.22);
+      color: white;
+      cursor: pointer;
+      padding: 0;
+    }
+    .${VIDEO_TARGET_CLASS}::after {
+      content: "Open in PiP";
+      position: absolute;
+      top: 12px;
+      right: 12px;
+      min-height: 34px;
+      display: inline-flex;
+      align-items: center;
+      padding: 0 12px;
+      border-radius: 999px;
+      background: rgba(15, 23, 42, 0.92);
+      font: 700 14px/1 system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
   `;
   document.documentElement.appendChild(style);
 }
@@ -167,6 +201,9 @@ function createOverlay(): HTMLButtonElement {
     },
     { signal: getRuntimeSignal() },
   );
+  button.addEventListener("mousemove", noteOverlayActivity, {
+    signal: getRuntimeSignal(),
+  });
   document.documentElement.appendChild(button);
   return button;
 }
@@ -257,6 +294,36 @@ function showToast(message: string): void {
   scheduleToastHide(3200);
 }
 
+function isCurrentSiteDisabled(): boolean {
+  return isSiteDisabled(settings, window.location);
+}
+
+function clearOverlayIdleTimer(): void {
+  if (overlayIdleTimer !== null) {
+    window.clearTimeout(overlayIdleTimer);
+    overlayIdleTimer = null;
+  }
+}
+
+function hideOverlay(): void {
+  overlay?.removeAttribute("data-visible");
+  overlayVideo = null;
+  clearOverlayIdleTimer();
+}
+
+function scheduleOverlayIdleHide(): void {
+  clearOverlayIdleTimer();
+  if (settings.overlayIdleHideMs <= 0) return;
+
+  overlayIdleTimer = window.setTimeout(() => {
+    hideOverlay();
+  }, settings.overlayIdleHideMs);
+}
+
+function noteOverlayActivity(): void {
+  if (overlay?.dataset.visible === "true") scheduleOverlayIdleHide();
+}
+
 function positionOverlay(video: HTMLVideoElement): void {
   const button = getOverlay();
   const rect = video.getBoundingClientRect();
@@ -296,6 +363,32 @@ function updateVisibleOverlayPosition(): void {
   positionOverlay(overlayVideo);
 }
 
+function updateSelectionTargetPositions(): void {
+  selectionUpdateFrame = null;
+  for (const target of selectionTargets) {
+    if (!target.video.isConnected) {
+      target.element.remove();
+      continue;
+    }
+    const rect = target.video.getBoundingClientRect();
+    target.element.style.left = `${Math.max(0, rect.left)}px`;
+    target.element.style.top = `${Math.max(0, rect.top)}px`;
+    target.element.style.width = `${Math.max(0, rect.width)}px`;
+    target.element.style.height = `${Math.max(0, rect.height)}px`;
+    target.element.hidden = rect.width <= 0 || rect.height <= 0;
+  }
+  selectionTargets = selectionTargets.filter(
+    (target) => target.video.isConnected,
+  );
+}
+
+function scheduleSelectionPositionUpdate(): void {
+  if (selectionUpdateFrame !== null) return;
+  selectionUpdateFrame = window.requestAnimationFrame(
+    updateSelectionTargetPositions,
+  );
+}
+
 function scheduleOverlayPositionUpdate(): void {
   if (overlayUpdateFrame !== null) return;
   overlayUpdateFrame = window.requestAnimationFrame(
@@ -304,6 +397,7 @@ function scheduleOverlayPositionUpdate(): void {
 }
 
 function isVideoEligibleForOverlay(video: HTMLVideoElement): boolean {
+  if (isCurrentSiteDisabled()) return false;
   const minimumSeconds = settings.minimumOverlayDurationSeconds;
   if (isYouTubeThumbnailPreview(video)) {
     recordDiagnostic("overlay-skipped-youtube-thumbnail", {
@@ -371,14 +465,70 @@ function showOverlay(video: HTMLVideoElement): void {
   overlayVideo = video;
   positionOverlay(video);
   getOverlay().dataset.visible = "true";
+  scheduleOverlayIdleHide();
 }
 
 function hideOverlaySoon(): void {
   window.setTimeout(() => {
     if (!overlay?.matches(":hover")) {
-      overlay?.removeAttribute("data-visible");
+      hideOverlay();
     }
   }, 100);
+}
+
+function selectableVideos(): HTMLVideoElement[] {
+  return Array.from(document.querySelectorAll("video")).filter((video) => {
+    const rect = video.getBoundingClientRect();
+    return rect.width > 0 && rect.height > 0;
+  });
+}
+
+function clearVideoSelection(): void {
+  for (const target of selectionTargets) target.element.remove();
+  selectionTargets = [];
+  if (selectionUpdateFrame !== null) {
+    window.cancelAnimationFrame(selectionUpdateFrame);
+    selectionUpdateFrame = null;
+  }
+}
+
+function startVideoSelection(): void {
+  if (isCurrentSiteDisabled()) {
+    showToast("PiP Anywhere is disabled on this site.");
+    return;
+  }
+
+  clearVideoSelection();
+  hideOverlay();
+  ensureStyle();
+
+  const videos = selectableVideos();
+  if (videos.length === 0) {
+    showToast("No eligible video found on this page.");
+    return;
+  }
+
+  for (const video of videos) {
+    const element = document.createElement("button");
+    element.type = "button";
+    element.className = VIDEO_TARGET_CLASS;
+    element.setAttribute("aria-label", "Open this video in picture-in-picture");
+    element.addEventListener(
+      "click",
+      (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        clearVideoSelection();
+        void triggerPiP(video);
+      },
+      { signal: getRuntimeSignal() },
+    );
+    document.documentElement.appendChild(element);
+    selectionTargets.push({ video, element });
+  }
+
+  updateSelectionTargetPositions();
+  showToast("Click a highlighted video to open picture-in-picture.");
 }
 
 function clearHoverTimer(): void {
@@ -421,7 +571,14 @@ function findVideoAtPoint(x: number, y: number): HTMLVideoElement | null {
 }
 
 function handleDocumentMouseMove(event: MouseEvent): void {
-  if (overlay?.matches(":hover")) return;
+  if (isCurrentSiteDisabled()) {
+    hideOverlay();
+    return;
+  }
+  if (overlay?.matches(":hover")) {
+    noteOverlayActivity();
+    return;
+  }
 
   const video = findVideoAtPoint(event.clientX, event.clientY);
   if (!video) {
@@ -445,7 +602,12 @@ function handleDocumentMouseMove(event: MouseEvent): void {
   scheduleOverlay(video);
 }
 
+function handleDocumentKeyDown(event: KeyboardEvent): void {
+  if (event.key === "Escape") clearVideoSelection();
+}
+
 function observeVideo(video: HTMLVideoElement): void {
+  if (isCurrentSiteDisabled()) return;
   if (video.getAttribute(VIDEO_ATTRIBUTE) === "true") return;
   diagnostics.videosObserved += 1;
   video.setAttribute(VIDEO_ATTRIBUTE, "true");
@@ -482,6 +644,7 @@ function observeVideo(video: HTMLVideoElement): void {
 }
 
 function observeVideos(root: ParentNode = document): void {
+  if (isCurrentSiteDisabled()) return;
   for (const video of root.querySelectorAll("video")) {
     observeVideo(video);
   }
@@ -491,7 +654,7 @@ function dispatchUnblockerConfig(): void {
   window.dispatchEvent(
     new CustomEvent(CONFIG_EVENT, {
       detail: {
-        enabled: settings.unblockVideoPiP,
+        enabled: settings.unblockVideoPiP && !isCurrentSiteDisabled(),
         debug: settings.debugLogging,
       },
     }),
@@ -523,6 +686,7 @@ function injectPageUnblocker(): void {
 }
 
 function handleMutations(mutations: MutationRecord[]): void {
+  if (isCurrentSiteDisabled()) return;
   for (const mutation of mutations) {
     if (
       mutation.type === "attributes" &&
@@ -540,6 +704,14 @@ function handleMutations(mutations: MutationRecord[]): void {
 }
 
 async function triggerPiP(video: HTMLVideoElement | null) {
+  if (isCurrentSiteDisabled()) {
+    showToast("PiP Anywhere is disabled on this site.");
+    return {
+      ok: false,
+      reason: "disabled",
+      message: "Site disabled by PiP Anywhere settings.",
+    } as const;
+  }
   diagnostics.pipRequests += 1;
   const result = await togglePictureInPicture(video);
   if (!result.ok) {
@@ -566,7 +738,8 @@ async function startContentRuntime(): Promise<void> {
   }
   if (!runtimeStarted || generation !== runtimeGeneration) return;
 
-  if (settings.unblockVideoPiP) injectPageUnblocker();
+  if (settings.unblockVideoPiP && !isCurrentSiteDisabled())
+    injectPageUnblocker();
   window.addEventListener(
     DIAGNOSTIC_EVENT,
     (event) => {
@@ -591,6 +764,17 @@ async function startContentRuntime(): Promise<void> {
   window.addEventListener("resize", scheduleOverlayPositionUpdate, {
     signal: getRuntimeSignal(),
   });
+  window.addEventListener("scroll", scheduleSelectionPositionUpdate, {
+    capture: true,
+    signal: getRuntimeSignal(),
+  });
+  window.addEventListener("resize", scheduleSelectionPositionUpdate, {
+    signal: getRuntimeSignal(),
+  });
+  document.addEventListener("keydown", handleDocumentKeyDown, {
+    capture: true,
+    signal: getRuntimeSignal(),
+  });
 
   mutationObserver = new MutationObserver(handleMutations);
   mutationObserver.observe(document.documentElement, {
@@ -604,6 +788,11 @@ async function startContentRuntime(): Promise<void> {
     const next = changes[SETTINGS_KEY];
     if (areaName === "sync" && next) {
       settings = normalizeSettings(next.newValue);
+      if (isCurrentSiteDisabled()) {
+        hideOverlay();
+        if (pageUnblockerInjected) dispatchUnblockerConfig();
+        return;
+      }
       if (settings.unblockVideoPiP && !pageUnblockerInjected) {
         injectPageUnblocker();
       } else if (pageUnblockerInjected) {
@@ -615,6 +804,11 @@ async function startContentRuntime(): Promise<void> {
   api.storage.onChanged.addListener(storageChangeListener);
 
   runtimeMessageListener = (message, _sender, sendResponse) => {
+    if (message?.type === "ultimate-pip.select-video") {
+      startVideoSelection();
+      sendResponse({ ok: true });
+      return false;
+    }
     if (message?.type !== "ultimate-pip.toggle") return false;
     void triggerPiP(findBestVideo()).then(sendResponse);
     return true;
@@ -653,6 +847,7 @@ function stopContentRuntime(): void {
   }
 
   clearHoverTimer();
+  clearOverlayIdleTimer();
   if (toastTimer !== null) {
     window.clearTimeout(toastTimer);
     toastTimer = null;
@@ -661,6 +856,7 @@ function stopContentRuntime(): void {
     window.cancelAnimationFrame(overlayUpdateFrame);
     overlayUpdateFrame = null;
   }
+  clearVideoSelection();
 
   overlay?.remove();
   toast?.remove();

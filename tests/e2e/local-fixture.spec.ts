@@ -167,9 +167,9 @@ test("honors configured hover delay before showing the overlay", async () => {
 
 test("positions the overlay from the configured corner and offsets", async () => {
   await setSettings({
-    overlayCorner: "bottom-left",
-    overlayOffsetX: 24,
-    overlayOffsetY: 32,
+    overlayPositionXPercent: 20,
+    overlayPositionYPercent: 80,
+    overlaySizePx: 48,
   });
   await page!.goto(`${server.origin}/pip-fixture.html`);
   await expectVideoDuration("#eligible-video", 45);
@@ -182,15 +182,52 @@ test("positions the overlay from the configured corner and offsets", async () =>
     throw new Error("Missing overlay or video bounding box");
   }
 
-  expect(Math.round(overlayBox.x - videoBox.x)).toBe(24);
-  const bottomDistance = Math.round(
-    videoBox.y + videoBox.height - overlayBox.y,
-  );
-  expect(bottomDistance).toBeGreaterThanOrEqual(
-    Math.round(overlayBox.height + 28),
-  );
-  expect(bottomDistance).toBeLessThanOrEqual(
-    Math.round(overlayBox.height + 32),
+  expect(
+    Math.abs(
+      Math.round(overlayBox.x + overlayBox.width / 2) -
+        Math.round(videoBox.x + videoBox.width * 0.2),
+    ),
+  ).toBeLessThanOrEqual(4);
+  expect(
+    Math.abs(
+      Math.round(overlayBox.y + overlayBox.height / 2) -
+        Math.round(videoBox.y + videoBox.height * 0.8),
+    ),
+  ).toBeLessThanOrEqual(4);
+  expect(Math.round(overlayBox.width)).toBe(48);
+});
+
+test("applies configured hover icon opacity and hides after idle", async () => {
+  await setSettings({
+    overlayOpacityPercent: 45,
+    overlayIdleHideMs: 500,
+  });
+  await page!.goto(`${server.origin}/pip-fixture.html`);
+  await expectVideoDuration("#eligible-video", 45);
+  await hoverCenter(page!, "#eligible-video");
+
+  const overlay = page!.locator(".ultimate-pip-overlay");
+  await expect(overlay).toBeVisible();
+  await expect
+    .poll(() =>
+      overlay.evaluate((element) => getComputedStyle(element).opacity),
+    )
+    .toBe("0.45");
+  await expect(overlay).not.toHaveAttribute("data-visible", "true", {
+    timeout: 900,
+  });
+});
+
+test("disables extension behavior on matching sites", async () => {
+  await setSettings({ disabledSitePatterns: ["127.0.0.1"] });
+  await page!.goto(`${server.origin}/pip-fixture.html`);
+  await expectVideoDuration("#eligible-video", 45);
+  await hoverCenter(page!, "#eligible-video");
+
+  await expect(page!.locator(".ultimate-pip-overlay")).toBeHidden();
+  await sendToggleMessageToPage(`${server.origin}/pip-fixture.html`);
+  await expect(page!.locator(".ultimate-pip-toast")).toHaveText(
+    "PiP Anywhere is disabled on this site.",
   );
 });
 
@@ -216,6 +253,23 @@ test("shows no-video feedback from an extension toggle message", async () => {
   await expect(page!.locator(".ultimate-pip-toast")).toHaveText(
     "No eligible video found on this page.",
   );
+});
+
+test("highlights videos for explicit selection mode", async () => {
+  await page!.goto(`${server.origin}/pip-fixture.html`);
+  await expectVideoDuration("#eligible-video", 45);
+  await sendSelectMessageToPage(`${server.origin}/pip-fixture.html`);
+
+  await expect(page!.locator(".ultimate-pip-video-target")).toHaveCount(5);
+  await page!.locator(".ultimate-pip-video-target").first().click();
+
+  await expect
+    .poll(() =>
+      page!.evaluate(() => {
+        return document.pictureInPictureElement?.id ?? null;
+      }),
+    )
+    .not.toBeNull();
 });
 
 test("autosaves options page changes and shows status text", async () => {
@@ -244,9 +298,11 @@ test("restores default options and persists them", async () => {
     hoverOverlayEnabled: false,
     hoverDelayMs: 900,
     minimumOverlayDurationSeconds: 0,
-    overlayCorner: "bottom-left",
-    overlayOffsetX: 40,
-    overlayOffsetY: 50,
+    overlayPositionXPercent: 20,
+    overlayPositionYPercent: 80,
+    overlayOpacityPercent: 55,
+    overlaySizePx: 60,
+    overlayIdleHideMs: 1000,
     unblockVideoPiP: false,
   });
 
@@ -258,9 +314,11 @@ test("restores default options and persists them", async () => {
   );
   await expect(page!.locator("#hover-delay-ms")).toHaveValue("250");
   await expect(page!.locator("#minimum-overlay-duration")).toHaveValue("45");
-  await expect(page!.locator("#overlay-corner")).toHaveValue("top-right");
-  await expect(page!.locator("#overlay-offset-x")).toHaveValue("12");
-  await expect(page!.locator("#overlay-offset-y")).toHaveValue("12");
+  await expect(page!.locator("#overlay-position-x")).toHaveValue("92");
+  await expect(page!.locator("#overlay-position-y")).toHaveValue("12");
+  await expect(page!.locator("#overlay-opacity")).toHaveValue("86");
+  await expect(page!.locator("#overlay-size")).toHaveValue("42");
+  await expect(page!.locator("#overlay-idle-hide")).toHaveValue("2500");
   await expect(page!.locator("#hover-overlay-enabled")).toBeChecked();
   await expect(page!.locator("#unblock-video-pip")).toBeChecked();
 
@@ -270,9 +328,11 @@ test("restores default options and persists them", async () => {
       hoverOverlayEnabled: true,
       hoverDelayMs: 250,
       minimumOverlayDurationSeconds: 45,
-      overlayCorner: "top-right",
-      overlayOffsetX: 12,
-      overlayOffsetY: 12,
+      overlayPositionXPercent: 92,
+      overlayPositionYPercent: 12,
+      overlayOpacityPercent: 86,
+      overlaySizePx: 42,
+      overlayIdleHideMs: 2500,
       unblockVideoPiP: true,
     });
 });
@@ -330,10 +390,13 @@ async function setSettings(
         hoverOverlayEnabled: true,
         hoverDelayMs: 250,
         minimumOverlayDurationSeconds: 45,
-        overlayCorner: "top-right",
-        overlayOffsetX: 12,
-        overlayOffsetY: 12,
+        overlayPositionXPercent: 92,
+        overlayPositionYPercent: 12,
+        overlayOpacityPercent: 86,
+        overlaySizePx: 42,
+        overlayIdleHideMs: 2500,
         unblockVideoPiP: true,
+        disabledSitePatterns: [],
         debugLogging: false,
         ...overrides,
       },
@@ -343,10 +406,21 @@ async function setSettings(
 }
 
 async function sendToggleMessageToPage(url: string): Promise<void> {
+  await sendMessageToPage(url, { type: "ultimate-pip.toggle" });
+}
+
+async function sendSelectMessageToPage(url: string): Promise<void> {
+  await sendMessageToPage(url, { type: "ultimate-pip.select-video" });
+}
+
+async function sendMessageToPage(
+  url: string,
+  message: { type: string },
+): Promise<void> {
   const worker = context.serviceWorkers()[0];
   if (!worker) throw new Error("Missing extension service worker");
   await worker.evaluate(
-    async ({ targetUrl }) =>
+    async ({ targetUrl, message }) =>
       new Promise<void>((resolve, reject) => {
         chrome.tabs.query({}, (tabs) => {
           const tab = tabs.find((candidate) =>
@@ -357,18 +431,14 @@ async function sendToggleMessageToPage(url: string): Promise<void> {
             return;
           }
 
-          chrome.tabs.sendMessage(
-            tab.id,
-            { type: "ultimate-pip.toggle" },
-            () => {
-              const error = chrome.runtime.lastError;
-              if (error) reject(new Error(error.message));
-              else resolve();
-            },
-          );
+          chrome.tabs.sendMessage(tab.id, message, () => {
+            const error = chrome.runtime.lastError;
+            if (error) reject(new Error(error.message));
+            else resolve();
+          });
         });
       }),
-    { targetUrl: url },
+    { targetUrl: url, message },
   );
 }
 
@@ -407,9 +477,12 @@ interface TestSettings {
   hoverOverlayEnabled: boolean;
   hoverDelayMs: number;
   minimumOverlayDurationSeconds: number;
-  overlayCorner: "top-right" | "top-left" | "bottom-right" | "bottom-left";
-  overlayOffsetX: number;
-  overlayOffsetY: number;
+  overlayPositionXPercent: number;
+  overlayPositionYPercent: number;
+  overlayOpacityPercent: number;
+  overlaySizePx: number;
+  overlayIdleHideMs: number;
   unblockVideoPiP: boolean;
+  disabledSitePatterns: string[];
   debugLogging: boolean;
 }
