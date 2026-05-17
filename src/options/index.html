@@ -252,7 +252,7 @@
             <h2 id="sites-heading">Site Rules</h2>
           </div>
 
-          <label class="setting-row textarea-row">
+          <div class="setting-row site-rules-row">
             <span class="setting-copy">
               <strong>Disable on matching sites</strong>
               <small
@@ -260,12 +260,33 @@
                 /pattern/ syntax and match the full URL.</small
               >
             </span>
-            <textarea
-              id="disabled-site-patterns"
-              rows="5"
-              spellcheck="false"
-            ></textarea>
-          </label>
+            <div class="site-rules-control">
+              <div class="site-rule-entry">
+                <input
+                  id="site-rule-input"
+                  type="text"
+                  autocomplete="off"
+                  spellcheck="false"
+                  placeholder="example.com or /watch\\/\\d+/"
+                />
+                <button
+                  id="add-site-rule"
+                  class="secondary-button icon-button"
+                  type="button"
+                  aria-label="Add site rule"
+                  title="Add site rule"
+                >
+                  +
+                </button>
+              </div>
+              <p id="site-rule-error" class="field-error" role="alert"></p>
+              <div
+                id="site-rule-list"
+                class="site-rule-list"
+                aria-label="Disabled site rules"
+              ></div>
+            </div>
+          </div>
         </section>
 
         <section

@@ -13,6 +13,7 @@ let saveTimer: number | null = null;
 let statusTimer: number | null = null;
 let initialized = false;
 let currentSettings: PipSettings = { ...DEFAULT_SETTINGS };
+let editingSiteRuleIndex: number | null = null;
 
 function byId<T extends HTMLElement>(id: string): T {
   const element = document.getElementById(id);
@@ -80,10 +81,7 @@ function readForm(): PipSettings {
       byId<HTMLInputElement>("overlay-idle-hide").value,
     ),
     unblockVideoPiP: byId<HTMLInputElement>("unblock-video-pip").checked,
-    disabledSitePatterns: byId<HTMLTextAreaElement>("disabled-site-patterns")
-      .value.split("\n")
-      .map((line) => line.trim())
-      .filter(Boolean),
+    disabledSitePatterns: readSiteRules(),
     debugLogging: __DEV__
       ? byId<HTMLInputElement>("debug-logging").checked
       : false,
@@ -124,8 +122,7 @@ function writeForm(settings: PipSettings): void {
     settings.overlayIdleHideMs === 0
       ? "Off"
       : `${settings.overlayIdleHideMs} ms`;
-  byId<HTMLTextAreaElement>("disabled-site-patterns").value =
-    settings.disabledSitePatterns.join("\n");
+  renderSiteRules(settings.disabledSitePatterns);
   byId<HTMLInputElement>("unblock-video-pip").checked =
     settings.unblockVideoPiP;
   if (__DEV__) {
@@ -180,8 +177,170 @@ function scheduleSave(): void {
 
 function bindAutoSave(): void {
   const form = byId<HTMLFormElement>("options-form");
-  form.addEventListener("input", scheduleSave);
+  form.addEventListener("input", (event) => {
+    if (event.target === byId<HTMLInputElement>("site-rule-input")) return;
+    scheduleSave();
+  });
   form.addEventListener("change", scheduleSave);
+}
+
+function readSiteRules(): string[] {
+  return Array.from(
+    byId<HTMLElement>("site-rule-list").querySelectorAll<HTMLElement>(
+      ".site-rule-item",
+    ),
+    (element) => element.dataset.rule ?? "",
+  ).filter(Boolean);
+}
+
+function renderSiteRules(patterns: string[]): void {
+  const list = byId<HTMLElement>("site-rule-list");
+  const normalized = normalizeSettings({
+    ...currentSettings,
+    disabledSitePatterns: patterns,
+  }).disabledSitePatterns;
+  list.replaceChildren();
+
+  if (normalized.length === 0) {
+    const empty = document.createElement("div");
+    empty.className = "site-rule-empty";
+    empty.textContent = "No disabled sites.";
+    list.append(empty);
+    resetSiteRuleDraft();
+    return;
+  }
+
+  normalized.forEach((pattern, index) => {
+    const item = document.createElement("div");
+    item.className = "site-rule-item";
+    item.dataset.rule = pattern;
+
+    const label = document.createElement("span");
+    label.className = "site-rule-pattern";
+    label.textContent = pattern;
+    label.title = pattern;
+
+    const edit = document.createElement("button");
+    edit.className = "secondary-button icon-button site-rule-edit";
+    edit.type = "button";
+    edit.textContent = "Edit";
+    edit.title = `Edit ${pattern}`;
+    edit.setAttribute("aria-label", `Edit ${pattern}`);
+    edit.addEventListener("click", () => startEditingSiteRule(index, pattern));
+
+    const remove = document.createElement("button");
+    remove.className = "secondary-button icon-button";
+    remove.type = "button";
+    remove.textContent = "X";
+    remove.title = `Remove ${pattern}`;
+    remove.setAttribute("aria-label", `Remove ${pattern}`);
+    remove.addEventListener("click", () => removeSiteRule(index));
+
+    item.append(label, edit, remove);
+    list.append(item);
+  });
+  resetSiteRuleDraft();
+}
+
+function initSiteRules(): void {
+  const input = byId<HTMLInputElement>("site-rule-input");
+  byId<HTMLButtonElement>("add-site-rule").addEventListener("click", () => {
+    commitSiteRuleDraft();
+  });
+  input.addEventListener("keydown", (event) => {
+    if (event.key === "Enter") {
+      event.preventDefault();
+      commitSiteRuleDraft();
+    }
+    if (event.key === "Escape") {
+      resetSiteRuleDraft();
+    }
+  });
+  input.addEventListener("input", () => {
+    setSiteRuleError("");
+  });
+}
+
+function startEditingSiteRule(index: number, pattern: string): void {
+  editingSiteRuleIndex = index;
+  const input = byId<HTMLInputElement>("site-rule-input");
+  input.value = pattern;
+  input.focus();
+  input.select();
+  const button = byId<HTMLButtonElement>("add-site-rule");
+  button.textContent = "✓";
+  button.title = "Save site rule";
+  button.setAttribute("aria-label", "Save site rule");
+  setSiteRuleError("");
+}
+
+function commitSiteRuleDraft(): void {
+  const input = byId<HTMLInputElement>("site-rule-input");
+  const pattern = input.value.trim();
+  if (!pattern) {
+    setSiteRuleError("Enter a hostname or /regex/ rule.");
+    return;
+  }
+
+  const validation = validateSiteRule(pattern);
+  if (!validation.ok) {
+    setSiteRuleError(validation.message);
+    return;
+  }
+
+  const rules = readSiteRules();
+  if (editingSiteRuleIndex === null) {
+    rules.push(pattern);
+  } else {
+    rules[editingSiteRuleIndex] = pattern;
+  }
+  renderSiteRules(rules);
+  scheduleSave();
+}
+
+function removeSiteRule(index: number): void {
+  const rules = readSiteRules();
+  rules.splice(index, 1);
+  renderSiteRules(rules);
+  scheduleSave();
+}
+
+function resetSiteRuleDraft(): void {
+  editingSiteRuleIndex = null;
+  const input = byId<HTMLInputElement>("site-rule-input");
+  input.value = "";
+  const button = byId<HTMLButtonElement>("add-site-rule");
+  button.textContent = "+";
+  button.title = "Add site rule";
+  button.setAttribute("aria-label", "Add site rule");
+  setSiteRuleError("");
+}
+
+function setSiteRuleError(message: string): void {
+  byId<HTMLElement>("site-rule-error").textContent = message;
+}
+
+function validateSiteRule(
+  pattern: string,
+): { ok: true } | { ok: false; message: string } {
+  if (!isRegexSiteRule(pattern)) return { ok: true };
+
+  const lastSlash = pattern.lastIndexOf("/");
+  const source = pattern.slice(1, lastSlash);
+  const flags = pattern.slice(lastSlash + 1);
+  try {
+    new RegExp(source, flags);
+    return { ok: true };
+  } catch {
+    return {
+      ok: false,
+      message: "Regex rules must use valid /pattern/flags syntax.",
+    };
+  }
+}
+
+function isRegexSiteRule(pattern: string): boolean {
+  return pattern.startsWith("/") && pattern.lastIndexOf("/") > 0;
 }
 
 function syncPositionPicker(settings: PipSettings): void {
@@ -287,6 +446,7 @@ async function init(): Promise<void> {
   initShortcutButton();
   initStatusHover();
   initPositionPicker();
+  initSiteRules();
   byId<HTMLElement>("advanced-section").hidden = !__DEV__;
   writeForm(await loadSettings());
   bindAutoSave();

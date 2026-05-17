@@ -362,6 +362,44 @@ test("autosaves options page changes and shows status text", async () => {
     .toBe(400);
 });
 
+test("manages disabled site rules with validation", async () => {
+  await page!.goto(`chrome-extension://${extensionId}/options.html`);
+
+  await page!.locator("#site-rule-input").fill("/[/");
+  await page!.locator("#add-site-rule").click();
+  await expect(page!.locator("#site-rule-error")).toHaveText(
+    "Regex rules must use valid /pattern/flags syntax.",
+  );
+  await expect(page!.locator(".site-rule-item")).toHaveCount(0);
+
+  await page!.locator("#site-rule-input").fill("example.com");
+  await page!.locator("#add-site-rule").click();
+  await expect(page!.locator(".site-rule-item")).toHaveCount(1);
+  await expect(page!.locator(".site-rule-pattern")).toHaveText("example.com");
+  await expect
+    .poll(() => readStoredSettings())
+    .toMatchObject({ disabledSitePatterns: ["example.com"] });
+
+  await page!.getByRole("button", { name: "Edit example.com" }).click();
+  await expect(page!.locator("#site-rule-input")).toHaveValue("example.com");
+  await page!.locator("#site-rule-input").fill("/watch\\/\\d+/");
+  await page!.locator("#add-site-rule").click();
+  await expect(page!.locator(".site-rule-pattern")).toHaveText(
+    "/watch\\/\\d+/",
+  );
+  await expect
+    .poll(() => readStoredSettings())
+    .toMatchObject({ disabledSitePatterns: ["/watch\\/\\d+/"] });
+
+  await page!.getByRole("button", { name: "Remove /watch\\/\\d+/" }).click();
+  await expect(page!.locator(".site-rule-empty")).toHaveText(
+    "No disabled sites.",
+  );
+  await expect
+    .poll(() => readStoredSettings())
+    .toMatchObject({ disabledSitePatterns: [] });
+});
+
 test("restores default options and persists them", async () => {
   await setSettings({
     hoverOverlayEnabled: false,
