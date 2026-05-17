@@ -19,6 +19,9 @@ const TOAST_CLASS = "ultimate-pip-toast";
 const VIDEO_TARGET_CLASS = "ultimate-pip-video-target";
 const RUNTIME_KIND = __DEV__ ? "dev" : "prod";
 const STYLE_ID = `ultimate-pip-style-${RUNTIME_KIND}`;
+const LEGACY_STYLE_ID = "ultimate-pip-style";
+const OVERLAY_ID = `ultimate-pip-overlay-${RUNTIME_KIND}`;
+const TOAST_ID = `ultimate-pip-toast-${RUNTIME_KIND}`;
 const VIDEO_ATTRIBUTE = `data-ultimate-pip-observed-${RUNTIME_KIND}`;
 const INJECTED_SCRIPT_ID = `ultimate-pip-unblocker-${RUNTIME_KIND}`;
 const CONFIG_EVENT = `ultimate-pip.configure.${RUNTIME_KIND}`;
@@ -94,7 +97,28 @@ function getRuntimeSignal(): AbortSignal {
   return runtimeAbort.signal;
 }
 
+function pruneStaleUiElements(): void {
+  for (const element of document.querySelectorAll(`.${OVERLAY_CLASS}`)) {
+    if (element !== overlay) element.remove();
+  }
+  for (const element of document.querySelectorAll(`.${TOAST_CLASS}`)) {
+    if (element !== toast) element.remove();
+  }
+
+  const activeSelectionElements = new Set(
+    selectionTargets.map((target) => target.element),
+  );
+  for (const element of document.querySelectorAll(`.${VIDEO_TARGET_CLASS}`)) {
+    if (!activeSelectionElements.has(element as HTMLButtonElement)) {
+      element.remove();
+    }
+  }
+
+  document.getElementById(LEGACY_STYLE_ID)?.remove();
+}
+
 function ensureStyle(): void {
+  pruneStaleUiElements();
   if (document.getElementById(STYLE_ID)) return;
   const style = document.createElement("style");
   style.id = STYLE_ID;
@@ -183,7 +207,9 @@ function ensureStyle(): void {
 }
 
 function createOverlay(): HTMLButtonElement {
+  pruneStaleUiElements();
   const button = document.createElement("button");
+  button.id = OVERLAY_ID;
   button.type = "button";
   button.className = OVERLAY_CLASS;
   button.setAttribute("aria-label", "Open picture-in-picture");
@@ -211,6 +237,7 @@ function createOverlay(): HTMLButtonElement {
 
 function getOverlay(): HTMLButtonElement {
   ensureStyle();
+  if (overlay && !overlay.isConnected) overlay = null;
   overlay ??= createOverlay();
   return overlay;
 }
@@ -219,6 +246,7 @@ function getToast(): HTMLDivElement {
   ensureStyle();
   if (!toast) {
     toast = document.createElement("div");
+    toast.id = TOAST_ID;
     toast.className = TOAST_CLASS;
     toast.setAttribute("role", "status");
     toast.setAttribute("aria-live", "polite");
@@ -738,6 +766,7 @@ async function startContentRuntime(): Promise<void> {
     settings = { ...DEFAULT_SETTINGS };
   }
   if (!runtimeStarted || generation !== runtimeGeneration) return;
+  pruneStaleUiElements();
 
   if (settings.unblockVideoPiP && !isCurrentSiteDisabled())
     injectPageUnblocker();
@@ -789,6 +818,8 @@ async function startContentRuntime(): Promise<void> {
     const next = changes[SETTINGS_KEY];
     if (areaName === "sync" && next) {
       settings = normalizeSettings(next.newValue);
+      pruneStaleUiElements();
+      scheduleOverlayPositionUpdate();
       if (isCurrentSiteDisabled()) {
         hideOverlay();
         if (pageUnblockerInjected) dispatchUnblockerConfig();

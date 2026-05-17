@@ -197,6 +197,29 @@ test("positions the overlay from configured percentage placement", async () => {
   expect(Math.round(overlayBox.width)).toBe(48);
 });
 
+test("removes stale duplicate hover overlays after settings changes", async () => {
+  await page!.goto(`${server.origin}/pip-fixture.html`);
+  await expectVideoDuration("#eligible-video", 45);
+  await hoverCenter(page!, "#eligible-video");
+  await expect(page!.locator(".ultimate-pip-overlay")).toHaveCount(1);
+
+  await page!.evaluate(() => {
+    const stale = document.createElement("button");
+    stale.className = "ultimate-pip-overlay";
+    stale.dataset.visible = "true";
+    stale.style.left = "10px";
+    stale.style.top = "10px";
+    document.documentElement.appendChild(stale);
+  });
+  await expect(page!.locator(".ultimate-pip-overlay")).toHaveCount(2);
+
+  await setSettings({
+    overlayPositionXPercent: 20,
+    overlayPositionYPercent: 80,
+  });
+  await expect(page!.locator(".ultimate-pip-overlay")).toHaveCount(1);
+});
+
 test("applies configured hover icon opacity and hides after idle", async () => {
   await setSettings({
     overlayOpacityPercent: 45,
