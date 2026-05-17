@@ -329,6 +329,9 @@ test("highlights videos for explicit selection mode", async () => {
   await sendSelectMessageToPage(`${server.origin}/pip-fixture.html`);
 
   await expect(page!.locator(".ultimate-pip-video-target")).toHaveCount(5);
+  await expectSelectionTargetToMatchVideo(0, "#eligible-video");
+  await page!.evaluate(() => window.scrollBy(0, 80));
+  await expectSelectionTargetToMatchVideo(0, "#eligible-video");
   await page!.locator(".ultimate-pip-video-target").first().click();
 
   await expect
@@ -498,6 +501,28 @@ async function hoverCenter(page: Page, selector: string): Promise<void> {
       y: box.height / 2,
     },
   });
+}
+
+async function expectSelectionTargetToMatchVideo(
+  targetIndex: number,
+  videoSelector: string,
+): Promise<void> {
+  await expect
+    .poll(async () => {
+      const targetBox = await page!
+        .locator(".ultimate-pip-video-target")
+        .nth(targetIndex)
+        .boundingBox();
+      const videoBox = await page!.locator(videoSelector).boundingBox();
+      if (!targetBox || !videoBox) return null;
+      return {
+        x: Math.round(targetBox.x - videoBox.x),
+        y: Math.round(targetBox.y - videoBox.y),
+        width: Math.round(targetBox.width - videoBox.width),
+        height: Math.round(targetBox.height - videoBox.height),
+      };
+    })
+    .toEqual({ x: 0, y: 0, width: 0, height: 0 });
 }
 
 async function closeExtensionPages(): Promise<void> {

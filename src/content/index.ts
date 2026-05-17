@@ -179,6 +179,7 @@ function ensureStyle(): void {
       transform: translate(-50%, 0);
     }
     .${VIDEO_TARGET_CLASS} {
+      box-sizing: border-box;
       position: fixed;
       z-index: 2147483646;
       border: 3px solid #f59f00;
@@ -416,15 +417,16 @@ function updateSelectionTargetPositions(): void {
       continue;
     }
     const rect = target.video.getBoundingClientRect();
-    target.element.style.left = `${Math.max(0, rect.left)}px`;
-    target.element.style.top = `${Math.max(0, rect.top)}px`;
+    target.element.style.left = `${rect.left}px`;
+    target.element.style.top = `${rect.top}px`;
     target.element.style.width = `${Math.max(0, rect.width)}px`;
     target.element.style.height = `${Math.max(0, rect.height)}px`;
-    target.element.hidden = rect.width <= 0 || rect.height <= 0;
+    target.element.hidden = !isSelectableVideo(target.video);
   }
   selectionTargets = selectionTargets.filter(
     (target) => target.video.isConnected,
   );
+  if (selectionTargets.length > 0) scheduleSelectionPositionUpdate();
 }
 
 function scheduleSelectionPositionUpdate(): void {
@@ -522,10 +524,29 @@ function hideOverlaySoon(): void {
 }
 
 function selectableVideos(): HTMLVideoElement[] {
-  return Array.from(document.querySelectorAll("video")).filter((video) => {
-    const rect = video.getBoundingClientRect();
-    return rect.width > 0 && rect.height > 0;
-  });
+  return Array.from(document.querySelectorAll("video")).filter(
+    isSelectableVideo,
+  );
+}
+
+function isSelectableVideo(video: HTMLVideoElement): boolean {
+  const rect = video.getBoundingClientRect();
+  if (rect.width <= 0 || rect.height <= 0) return false;
+  return isElementVisible(video);
+}
+
+function isElementVisible(element: Element): boolean {
+  for (let node: Element | null = element; node; node = node.parentElement) {
+    const style = window.getComputedStyle(node);
+    if (
+      style.display === "none" ||
+      style.visibility === "hidden" ||
+      Number(style.opacity) === 0
+    ) {
+      return false;
+    }
+  }
+  return true;
 }
 
 function clearVideoSelection(): void {

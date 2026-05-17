@@ -64,6 +64,14 @@
       .thumbnail-preview video {
         width: 240px;
       }
+
+      .invisible-video {
+        opacity: 0;
+      }
+
+      .hidden-video {
+        visibility: hidden;
+      }
     </style>
   </head>
   <body>
@@ -88,6 +96,24 @@
         <video
           id="short-video"
           src="/short.mp4"
+          preload="metadata"
+          controls
+        ></video>
+      </section>
+
+      <section>
+        <h2>Invisible videos</h2>
+        <video
+          id="invisible-video"
+          class="invisible-video"
+          src="/long.mp4"
+          preload="metadata"
+          controls
+        ></video>
+        <video
+          id="hidden-video"
+          class="hidden-video"
+          src="/long.mp4"
           preload="metadata"
           controls
         ></video>
