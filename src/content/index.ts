@@ -606,6 +606,7 @@ function clearHoverTimer(): void {
 }
 
 function scheduleOverlay(video: HTMLVideoElement): void {
+  if (selectionTargets.length > 0) return;
   if (hoverTargetVideo === video && hoverTimer !== null) return;
   clearHoverTimer();
   hoverTargetVideo = video;
@@ -637,6 +638,11 @@ function findVideoAtPoint(x: number, y: number): HTMLVideoElement | null {
 }
 
 function handleDocumentMouseMove(event: MouseEvent): void {
+  if (selectionTargets.length > 0) {
+    clearHoverTimer();
+    hideOverlay();
+    return;
+  }
   if (isCurrentSiteDisabled()) {
     hideOverlay();
     return;

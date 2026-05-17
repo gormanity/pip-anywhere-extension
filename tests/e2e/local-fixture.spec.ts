@@ -330,6 +330,9 @@ test("highlights videos for explicit selection mode", async () => {
 
   await expect(page!.locator(".ultimate-pip-video-target")).toHaveCount(5);
   await expectSelectionTargetToMatchVideo(0, "#eligible-video");
+  await page!.locator(".ultimate-pip-video-target").first().hover();
+  await expect(page!.locator(".ultimate-pip-video-target")).toHaveCount(5);
+  await expect(page!.locator(".ultimate-pip-overlay")).toBeHidden();
   await page!.evaluate(() => window.scrollBy(0, 80));
   await expectSelectionTargetToMatchVideo(0, "#eligible-video");
   await page!.locator(".ultimate-pip-video-target").first().click();
