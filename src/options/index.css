@@ -114,7 +114,6 @@ small {
 }
 
 .settings-panel {
-  overflow: hidden;
   border: 1px solid var(--line);
   border-radius: 8px;
   background: var(--panel);
@@ -389,13 +388,17 @@ button,
 }
 
 .action-bar {
+  position: sticky;
+  top: 12px;
+  z-index: 10;
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 16px;
   min-height: 74px;
   padding: 16px 24px;
-  border-top: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+  border-radius: 7px 7px 0 0;
   background: var(--panel-muted);
 }
 

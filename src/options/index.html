@@ -17,6 +17,26 @@
       </header>
 
       <form id="options-form" class="settings-panel">
+        <div class="action-bar">
+          <span id="status" role="status" aria-live="polite"></span>
+          <div class="actions">
+            <button id="export-settings" class="secondary-button" type="button">
+              Export
+            </button>
+            <label class="secondary-button import-button">
+              Import
+              <input
+                id="import-settings"
+                type="file"
+                accept="application/json"
+              />
+            </label>
+            <button id="reset" class="secondary-button" type="button">
+              Restore Defaults
+            </button>
+          </div>
+        </div>
+
         <section class="settings-section" aria-labelledby="behavior-heading">
           <div class="section-heading">
             <h2 id="behavior-heading">Behavior</h2>
@@ -258,26 +278,6 @@
             />
           </label>
         </section>
-
-        <footer class="action-bar">
-          <span id="status" role="status" aria-live="polite"></span>
-          <div class="actions">
-            <button id="export-settings" class="secondary-button" type="button">
-              Export
-            </button>
-            <label class="secondary-button import-button">
-              Import
-              <input
-                id="import-settings"
-                type="file"
-                accept="application/json"
-              />
-            </label>
-            <button id="reset" class="secondary-button" type="button">
-              Restore Defaults
-            </button>
-          </div>
-        </footer>
       </form>
     </main>
     <script type="module" src="options.js"></script>

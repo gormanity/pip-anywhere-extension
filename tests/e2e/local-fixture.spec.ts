@@ -345,6 +345,7 @@ test("autosaves options page changes and shows status text", async () => {
   await page!.locator("#hover-delay-ms").fill("400");
 
   await expect(page!.locator("#status")).toHaveText("Settings saved.");
+  await expect(page!.locator("#status")).toBeInViewport();
   await expect
     .poll(() =>
       page!.evaluate(
