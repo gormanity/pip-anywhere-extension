@@ -93,8 +93,8 @@ function ensureStyle(): void {
     .${OVERLAY_CLASS} {
       position: fixed;
       z-index: 2147483647;
-      width: 42px;
-      height: 42px;
+      width: var(--pip-overlay-size, 42px);
+      height: var(--pip-overlay-size, 42px);
       border: 0;
       border-radius: 999px;
       color: white;
@@ -110,7 +110,7 @@ function ensureStyle(): void {
       transform: translateY(4px);
     }
     .${OVERLAY_CLASS}[data-visible="true"] {
-      opacity: 1;
+      opacity: var(--pip-overlay-opacity, 0.86);
       pointer-events: auto;
       transform: translateY(0);
     }
@@ -264,22 +264,25 @@ function positionOverlay(video: HTMLVideoElement): void {
     button.removeAttribute("data-visible");
     return;
   }
-  const buttonSize = 42;
-  const adaptiveOffsetX = Math.min(settings.overlayOffsetX, rect.width * 0.15);
-  const adaptiveOffsetY = Math.min(settings.overlayOffsetY, rect.height * 0.15);
-  const fromRight = settings.overlayCorner.endsWith("right");
-  const fromBottom = settings.overlayCorner.startsWith("bottom");
-  const top = fromBottom
-    ? rect.bottom - buttonSize - adaptiveOffsetY
-    : rect.top + adaptiveOffsetY;
-  const left = fromRight
-    ? rect.right - buttonSize - adaptiveOffsetX
-    : rect.left + adaptiveOffsetX;
+  const buttonSize = settings.overlaySizePx;
+  const top =
+    rect.top +
+    (rect.height * settings.overlayPositionYPercent) / 100 -
+    buttonSize / 2;
+  const left =
+    rect.left +
+    (rect.width * settings.overlayPositionXPercent) / 100 -
+    buttonSize / 2;
 
   const maxTop = window.innerHeight - buttonSize - 8;
   const maxLeft = window.innerWidth - buttonSize - 8;
   button.style.top = `${Math.min(maxTop, Math.max(8, top))}px`;
   button.style.left = `${Math.min(maxLeft, Math.max(8, left))}px`;
+  button.style.setProperty("--pip-overlay-size", `${buttonSize}px`);
+  button.style.setProperty(
+    "--pip-overlay-opacity",
+    String(settings.overlayOpacityPercent / 100),
+  );
 }
 
 function updateVisibleOverlayPosition(): void {

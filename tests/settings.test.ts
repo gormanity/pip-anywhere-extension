@@ -1,11 +1,16 @@
 import { describe, expect, it } from "vitest";
 import {
   clampOverlayOffset,
+  clampOverlayOpacity,
+  clampOverlayPositionPercent,
+  clampOverlaySize,
   clampHoverDelay,
   clampMinimumOverlayDuration,
   DEFAULT_SETTINGS,
+  isSiteDisabled,
   normalizeOverlayCorner,
   normalizeSettings,
+  sitePatternMatches,
 } from "@/core/settings";
 
 describe("settings normalization", () => {
@@ -27,12 +32,16 @@ describe("settings normalization", () => {
 
   it("normalizes overlay placement settings", () => {
     expect(normalizeOverlayCorner("bottom-left")).toBe("bottom-left");
-    expect(normalizeOverlayCorner("center")).toBe(
-      DEFAULT_SETTINGS.overlayCorner,
-    );
+    expect(normalizeOverlayCorner("center")).toBe("top-right");
     expect(clampOverlayOffset(-1)).toBe(0);
     expect(clampOverlayOffset(200)).toBe(160);
     expect(clampOverlayOffset("24.4")).toBe(24);
+    expect(clampOverlayPositionPercent(-1)).toBe(0);
+    expect(clampOverlayPositionPercent(101)).toBe(100);
+    expect(clampOverlayOpacity(10)).toBe(20);
+    expect(clampOverlayOpacity(101)).toBe(100);
+    expect(clampOverlaySize(20)).toBe(28);
+    expect(clampOverlaySize(90)).toBe(72);
   });
 
   it("preserves valid boolean settings", () => {
@@ -41,21 +50,58 @@ describe("settings normalization", () => {
         hoverOverlayEnabled: false,
         hoverDelayMs: 100,
         minimumOverlayDurationSeconds: 30,
-        overlayCorner: "bottom-left",
-        overlayOffsetX: 24,
-        overlayOffsetY: 32,
+        overlayPositionXPercent: 25,
+        overlayPositionYPercent: 75,
+        overlayOpacityPercent: 60,
+        overlaySizePx: 52,
+        overlayIdleHideMs: 3000,
         unblockVideoPiP: false,
+        disabledSitePatterns: ["example.com", "/player/"],
         debugLogging: true,
       }),
     ).toEqual({
       hoverOverlayEnabled: false,
       hoverDelayMs: 100,
       minimumOverlayDurationSeconds: 30,
-      overlayCorner: "bottom-left",
-      overlayOffsetX: 24,
-      overlayOffsetY: 32,
+      overlayPositionXPercent: 25,
+      overlayPositionYPercent: 75,
+      overlayOpacityPercent: 60,
+      overlaySizePx: 52,
+      overlayIdleHideMs: 3000,
       unblockVideoPiP: false,
+      disabledSitePatterns: ["example.com", "/player/"],
       debugLogging: __DEV__,
     });
+  });
+
+  it("migrates legacy overlay corner and offset settings", () => {
+    expect(
+      normalizeSettings({
+        overlayCorner: "bottom-left",
+        overlayOffsetX: 80,
+        overlayOffsetY: 40,
+      }),
+    ).toMatchObject({
+      overlayPositionXPercent: 10,
+      overlayPositionYPercent: 95,
+    });
+  });
+
+  it("matches exact hosts, subdomains, and regex site patterns", () => {
+    const location = {
+      hostname: "video.example.com",
+      href: "https://video.example.com/watch/123",
+    } as Location;
+
+    expect(sitePatternMatches("example.com", location)).toBe(true);
+    expect(sitePatternMatches("other.example", location)).toBe(false);
+    expect(sitePatternMatches("/watch\\/\\d+/", location)).toBe(true);
+    expect(sitePatternMatches("/[/", location)).toBe(false);
+    expect(
+      isSiteDisabled(
+        { disabledSitePatterns: ["other.example", "example.com"] },
+        location,
+      ),
+    ).toBe(true);
   });
 });

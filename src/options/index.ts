@@ -1,8 +1,7 @@
 import {
   DEFAULT_SETTINGS,
-  OVERLAY_CORNERS,
   loadSettings,
-  normalizeOverlayCorner,
+  normalizeSettings,
   saveSettings,
   type PipSettings,
 } from "@/core/settings";
@@ -13,6 +12,7 @@ const api = getBrowserApi();
 let saveTimer: number | null = null;
 let statusTimer: number | null = null;
 let initialized = false;
+let currentSettings: PipSettings = { ...DEFAULT_SETTINGS };
 
 function byId<T extends HTMLElement>(id: string): T {
   const element = document.getElementById(id);
@@ -66,12 +66,24 @@ function readForm(): PipSettings {
     minimumOverlayDurationSeconds: Number(
       byId<HTMLInputElement>("minimum-overlay-duration").value,
     ),
-    overlayCorner: normalizeOverlayCorner(
-      byId<HTMLSelectElement>("overlay-corner").value,
+    overlayPositionXPercent: Number(
+      byId<HTMLInputElement>("overlay-position-x").value,
     ),
-    overlayOffsetX: Number(byId<HTMLInputElement>("overlay-offset-x").value),
-    overlayOffsetY: Number(byId<HTMLInputElement>("overlay-offset-y").value),
+    overlayPositionYPercent: Number(
+      byId<HTMLInputElement>("overlay-position-y").value,
+    ),
+    overlayOpacityPercent: Number(
+      byId<HTMLInputElement>("overlay-opacity").value,
+    ),
+    overlaySizePx: Number(byId<HTMLInputElement>("overlay-size").value),
+    overlayIdleHideMs: Number(
+      byId<HTMLInputElement>("overlay-idle-hide").value,
+    ),
     unblockVideoPiP: byId<HTMLInputElement>("unblock-video-pip").checked,
+    disabledSitePatterns: byId<HTMLTextAreaElement>("disabled-site-patterns")
+      .value.split("\n")
+      .map((line) => line.trim())
+      .filter(Boolean),
     debugLogging: __DEV__
       ? byId<HTMLInputElement>("debug-logging").checked
       : false,
@@ -91,22 +103,36 @@ function writeForm(settings: PipSettings): void {
   );
   byId<HTMLOutputElement>("minimum-overlay-duration-output").value =
     `${settings.minimumOverlayDurationSeconds} s`;
-  byId<HTMLSelectElement>("overlay-corner").value = settings.overlayCorner;
-  byId<HTMLInputElement>("overlay-offset-x").value = String(
-    settings.overlayOffsetX,
+  byId<HTMLInputElement>("overlay-position-x").value = String(
+    settings.overlayPositionXPercent,
   );
-  byId<HTMLOutputElement>("overlay-offset-x-output").value =
-    `${settings.overlayOffsetX} px`;
-  byId<HTMLInputElement>("overlay-offset-y").value = String(
-    settings.overlayOffsetY,
+  byId<HTMLInputElement>("overlay-position-y").value = String(
+    settings.overlayPositionYPercent,
   );
-  byId<HTMLOutputElement>("overlay-offset-y-output").value =
-    `${settings.overlayOffsetY} px`;
+  byId<HTMLInputElement>("overlay-opacity").value = String(
+    settings.overlayOpacityPercent,
+  );
+  byId<HTMLOutputElement>("overlay-opacity-output").value =
+    `${settings.overlayOpacityPercent}%`;
+  byId<HTMLInputElement>("overlay-size").value = String(settings.overlaySizePx);
+  byId<HTMLOutputElement>("overlay-size-output").value =
+    `${settings.overlaySizePx}px`;
+  byId<HTMLInputElement>("overlay-idle-hide").value = String(
+    settings.overlayIdleHideMs,
+  );
+  byId<HTMLOutputElement>("overlay-idle-hide-output").value =
+    settings.overlayIdleHideMs === 0
+      ? "Off"
+      : `${settings.overlayIdleHideMs} ms`;
+  byId<HTMLTextAreaElement>("disabled-site-patterns").value =
+    settings.disabledSitePatterns.join("\n");
   byId<HTMLInputElement>("unblock-video-pip").checked =
     settings.unblockVideoPiP;
   if (__DEV__) {
     byId<HTMLInputElement>("debug-logging").checked = settings.debugLogging;
   }
+  syncPositionPicker(settings);
+  currentSettings = normalizeSettings(settings);
 }
 
 function setStatus(text: string): void {
@@ -147,7 +173,8 @@ function scheduleSave(): void {
   }
   saveTimer = window.setTimeout(() => {
     saveTimer = null;
-    void saveSettings(readForm()).then(() => setStatus("Settings saved."));
+    currentSettings = normalizeSettings(readForm());
+    void saveSettings(currentSettings).then(() => setStatus("Settings saved."));
   }, 250);
 }
 
@@ -157,19 +184,109 @@ function bindAutoSave(): void {
   form.addEventListener("change", scheduleSave);
 }
 
+function syncPositionPicker(settings: PipSettings): void {
+  const handle = byId<HTMLButtonElement>("overlay-position-handle");
+  handle.style.left = `${settings.overlayPositionXPercent}%`;
+  handle.style.top = `${settings.overlayPositionYPercent}%`;
+  handle.style.width = `${settings.overlaySizePx}px`;
+  handle.style.height = `${settings.overlaySizePx}px`;
+  handle.style.opacity = String(settings.overlayOpacityPercent / 100);
+  byId<HTMLOutputElement>("overlay-position-x-output").value =
+    `X ${settings.overlayPositionXPercent}%`;
+  byId<HTMLOutputElement>("overlay-position-y-output").value =
+    `Y ${settings.overlayPositionYPercent}%`;
+}
+
+function setPositionFromPointer(event: PointerEvent): void {
+  const picker = byId<HTMLElement>("overlay-position-picker");
+  const rect = picker.getBoundingClientRect();
+  const x = Math.round(((event.clientX - rect.left) / rect.width) * 100);
+  const y = Math.round(((event.clientY - rect.top) / rect.height) * 100);
+  byId<HTMLInputElement>("overlay-position-x").value = String(
+    Math.min(100, Math.max(0, x)),
+  );
+  byId<HTMLInputElement>("overlay-position-y").value = String(
+    Math.min(100, Math.max(0, y)),
+  );
+  syncPositionPicker(normalizeSettings(readForm()));
+  scheduleSave();
+}
+
+function initPositionPicker(): void {
+  const picker = byId<HTMLElement>("overlay-position-picker");
+  const handle = byId<HTMLButtonElement>("overlay-position-handle");
+  const xInput = document.createElement("input");
+  xInput.id = "overlay-position-x";
+  xInput.type = "hidden";
+  const yInput = document.createElement("input");
+  yInput.id = "overlay-position-y";
+  yInput.type = "hidden";
+  picker.append(xInput, yInput);
+
+  let dragging = false;
+  picker.addEventListener("pointerdown", (event) => {
+    dragging = true;
+    picker.setPointerCapture(event.pointerId);
+    setPositionFromPointer(event);
+  });
+  picker.addEventListener("pointermove", (event) => {
+    if (dragging) setPositionFromPointer(event);
+  });
+  picker.addEventListener("pointerup", (event) => {
+    dragging = false;
+    picker.releasePointerCapture(event.pointerId);
+  });
+  picker.addEventListener("pointercancel", () => {
+    dragging = false;
+  });
+  handle.addEventListener("keydown", (event) => {
+    const step = event.shiftKey ? 10 : 2;
+    const settings = normalizeSettings(readForm());
+    if (event.key === "ArrowLeft") settings.overlayPositionXPercent -= step;
+    else if (event.key === "ArrowRight")
+      settings.overlayPositionXPercent += step;
+    else if (event.key === "ArrowUp") settings.overlayPositionYPercent -= step;
+    else if (event.key === "ArrowDown")
+      settings.overlayPositionYPercent += step;
+    else return;
+
+    event.preventDefault();
+    writeForm(normalizeSettings(settings));
+    scheduleSave();
+  });
+}
+
+function exportSettings(): void {
+  const payload = {
+    schemaVersion: 1,
+    exportedAt: new Date().toISOString(),
+    settings: normalizeSettings(readForm()),
+  };
+  const blob = new Blob([JSON.stringify(payload, null, 2)], {
+    type: "application/json",
+  });
+  const url = URL.createObjectURL(blob);
+  const anchor = document.createElement("a");
+  anchor.href = url;
+  anchor.download = "pip-anywhere-settings.json";
+  anchor.click();
+  URL.revokeObjectURL(url);
+}
+
+async function importSettings(file: File): Promise<void> {
+  const text = await file.text();
+  const parsed = JSON.parse(text) as { settings?: unknown };
+  const settings = normalizeSettings(parsed.settings ?? parsed);
+  writeForm(settings);
+  await saveSettings(settings);
+  setStatus("Settings imported.");
+}
+
 async function init(): Promise<void> {
   await updateShortcutText();
   initShortcutButton();
   initStatusHover();
-  for (const corner of OVERLAY_CORNERS) {
-    const option = document.createElement("option");
-    option.value = corner;
-    option.textContent = corner
-      .split("-")
-      .map((part) => part[0].toUpperCase() + part.slice(1))
-      .join(" ");
-    byId<HTMLSelectElement>("overlay-corner").appendChild(option);
-  }
+  initPositionPicker();
   byId<HTMLElement>("advanced-section").hidden = !__DEV__;
   writeForm(await loadSettings());
   bindAutoSave();
@@ -186,16 +303,23 @@ async function init(): Promise<void> {
       `${minimumDuration.value} s`;
   });
 
-  const offsetX = byId<HTMLInputElement>("overlay-offset-x");
-  offsetX.addEventListener("input", () => {
-    byId<HTMLOutputElement>("overlay-offset-x-output").value =
-      `${offsetX.value} px`;
+  const size = byId<HTMLInputElement>("overlay-size");
+  size.addEventListener("input", () => {
+    byId<HTMLOutputElement>("overlay-size-output").value = `${size.value}px`;
+    syncPositionPicker(normalizeSettings(readForm()));
   });
 
-  const offsetY = byId<HTMLInputElement>("overlay-offset-y");
-  offsetY.addEventListener("input", () => {
-    byId<HTMLOutputElement>("overlay-offset-y-output").value =
-      `${offsetY.value} px`;
+  const opacity = byId<HTMLInputElement>("overlay-opacity");
+  opacity.addEventListener("input", () => {
+    byId<HTMLOutputElement>("overlay-opacity-output").value =
+      `${opacity.value}%`;
+    syncPositionPicker(normalizeSettings(readForm()));
+  });
+
+  const idleHide = byId<HTMLInputElement>("overlay-idle-hide");
+  idleHide.addEventListener("input", () => {
+    byId<HTMLOutputElement>("overlay-idle-hide-output").value =
+      idleHide.value === "0" ? "Off" : `${idleHide.value} ms`;
   });
 
   byId<HTMLFormElement>("options-form").addEventListener("submit", (event) => {
@@ -208,6 +332,24 @@ async function init(): Promise<void> {
       setStatus("Default settings restored."),
     );
   });
+
+  byId<HTMLButtonElement>("export-settings").addEventListener(
+    "click",
+    exportSettings,
+  );
+  byId<HTMLInputElement>("import-settings").addEventListener(
+    "change",
+    (event) => {
+      const input = event.currentTarget as HTMLInputElement;
+      const file = input.files?.[0];
+      if (!file) return;
+      void importSettings(file)
+        .catch(() => setStatus("Settings import failed."))
+        .finally(() => {
+          input.value = "";
+        });
+    },
+  );
 }
 
 void init();

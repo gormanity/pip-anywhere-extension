@@ -4,10 +4,13 @@ export interface PipSettings {
   hoverOverlayEnabled: boolean;
   hoverDelayMs: number;
   minimumOverlayDurationSeconds: number;
-  overlayCorner: OverlayCorner;
-  overlayOffsetX: number;
-  overlayOffsetY: number;
+  overlayPositionXPercent: number;
+  overlayPositionYPercent: number;
+  overlayOpacityPercent: number;
+  overlaySizePx: number;
+  overlayIdleHideMs: number;
   unblockVideoPiP: boolean;
+  disabledSitePatterns: string[];
   debugLogging: boolean;
 }
 
@@ -20,21 +23,31 @@ export const OVERLAY_CORNERS = [
 ] as const;
 
 export type OverlayCorner = (typeof OVERLAY_CORNERS)[number];
+const DEFAULT_LEGACY_OVERLAY_CORNER: OverlayCorner = "top-right";
+
+type StoredPipSettings = Partial<PipSettings> & {
+  overlayCorner?: unknown;
+  overlayOffsetX?: unknown;
+  overlayOffsetY?: unknown;
+};
 
 export const DEFAULT_SETTINGS: PipSettings = {
   hoverOverlayEnabled: true,
   hoverDelayMs: 250,
   minimumOverlayDurationSeconds: 45,
-  overlayCorner: "top-right",
-  overlayOffsetX: 12,
-  overlayOffsetY: 12,
+  overlayPositionXPercent: 92,
+  overlayPositionYPercent: 12,
+  overlayOpacityPercent: 86,
+  overlaySizePx: 42,
+  overlayIdleHideMs: 2500,
   unblockVideoPiP: true,
+  disabledSitePatterns: [],
   debugLogging: false,
 };
 
 export function normalizeSettings(input: unknown): PipSettings {
   const stored = input && typeof input === "object" ? input : {};
-  const candidate = stored as Partial<PipSettings>;
+  const candidate = stored as StoredPipSettings;
   return {
     hoverOverlayEnabled:
       typeof candidate.hoverOverlayEnabled === "boolean"
@@ -44,13 +57,28 @@ export function normalizeSettings(input: unknown): PipSettings {
     minimumOverlayDurationSeconds: clampMinimumOverlayDuration(
       candidate.minimumOverlayDurationSeconds,
     ),
-    overlayCorner: normalizeOverlayCorner(candidate.overlayCorner),
-    overlayOffsetX: clampOverlayOffset(candidate.overlayOffsetX),
-    overlayOffsetY: clampOverlayOffset(candidate.overlayOffsetY),
+    overlayPositionXPercent: normalizeOverlayPositionPercent(
+      candidate.overlayPositionXPercent,
+      candidate.overlayCorner,
+      candidate.overlayOffsetX,
+      "x",
+    ),
+    overlayPositionYPercent: normalizeOverlayPositionPercent(
+      candidate.overlayPositionYPercent,
+      candidate.overlayCorner,
+      candidate.overlayOffsetY,
+      "y",
+    ),
+    overlayOpacityPercent: clampOverlayOpacity(candidate.overlayOpacityPercent),
+    overlaySizePx: clampOverlaySize(candidate.overlaySizePx),
+    overlayIdleHideMs: clampOverlayIdleHide(candidate.overlayIdleHideMs),
     unblockVideoPiP:
       typeof candidate.unblockVideoPiP === "boolean"
         ? candidate.unblockVideoPiP
         : DEFAULT_SETTINGS.unblockVideoPiP,
+    disabledSitePatterns: normalizeDisabledSitePatterns(
+      candidate.disabledSitePatterns,
+    ),
     debugLogging: __DEV__
       ? typeof candidate.debugLogging === "boolean"
         ? candidate.debugLogging
@@ -79,10 +107,101 @@ export function clampOverlayOffset(value: unknown): number {
   return Math.min(160, Math.max(0, Math.round(numeric)));
 }
 
+export function clampOverlayPositionPercent(value: unknown): number {
+  const numeric = Number(value);
+  if (!Number.isFinite(numeric)) return 50;
+  return Math.min(100, Math.max(0, Math.round(numeric)));
+}
+
+export function clampOverlayOpacity(value: unknown): number {
+  const numeric = Number(value);
+  if (!Number.isFinite(numeric)) return DEFAULT_SETTINGS.overlayOpacityPercent;
+  return Math.min(100, Math.max(20, Math.round(numeric)));
+}
+
+export function clampOverlaySize(value: unknown): number {
+  const numeric = Number(value);
+  if (!Number.isFinite(numeric)) return DEFAULT_SETTINGS.overlaySizePx;
+  return Math.min(72, Math.max(28, Math.round(numeric)));
+}
+
+export function clampOverlayIdleHide(value: unknown): number {
+  const numeric = Number(value);
+  if (!Number.isFinite(numeric)) return DEFAULT_SETTINGS.overlayIdleHideMs;
+  return Math.min(10000, Math.max(0, Math.round(numeric)));
+}
+
 export function normalizeOverlayCorner(value: unknown): OverlayCorner {
   return OVERLAY_CORNERS.includes(value as OverlayCorner)
     ? (value as OverlayCorner)
-    : DEFAULT_SETTINGS.overlayCorner;
+    : DEFAULT_LEGACY_OVERLAY_CORNER;
+}
+
+export function normalizeOverlayPositionPercent(
+  value: unknown,
+  legacyCorner: unknown,
+  legacyOffset: unknown,
+  axis: "x" | "y",
+): number {
+  if (value !== undefined) return clampOverlayPositionPercent(value);
+  if (legacyCorner === undefined && legacyOffset === undefined) {
+    return axis === "x"
+      ? DEFAULT_SETTINGS.overlayPositionXPercent
+      : DEFAULT_SETTINGS.overlayPositionYPercent;
+  }
+
+  const corner = normalizeOverlayCorner(legacyCorner);
+  const offset = clampOverlayOffset(legacyOffset);
+  const insetPercent = Math.min(20, Math.round((offset / 160) * 20));
+
+  if (axis === "x") {
+    return corner.endsWith("left") ? insetPercent : 100 - insetPercent;
+  }
+  return corner.startsWith("top") ? insetPercent : 100 - insetPercent;
+}
+
+export function normalizeDisabledSitePatterns(value: unknown): string[] {
+  if (!Array.isArray(value)) return DEFAULT_SETTINGS.disabledSitePatterns;
+
+  const unique = new Set<string>();
+  for (const item of value) {
+    if (typeof item !== "string") continue;
+    const pattern = item.trim();
+    if (pattern) unique.add(pattern);
+  }
+  return Array.from(unique).slice(0, 100);
+}
+
+export function isSiteDisabled(
+  settings: Pick<PipSettings, "disabledSitePatterns">,
+  locationLike: Pick<Location, "hostname" | "href">,
+): boolean {
+  return settings.disabledSitePatterns.some((pattern) =>
+    sitePatternMatches(pattern, locationLike),
+  );
+}
+
+export function sitePatternMatches(
+  pattern: string,
+  locationLike: Pick<Location, "hostname" | "href">,
+): boolean {
+  const trimmed = pattern.trim();
+  if (!trimmed) return false;
+
+  if (trimmed.startsWith("/") && trimmed.lastIndexOf("/") > 0) {
+    const lastSlash = trimmed.lastIndexOf("/");
+    const source = trimmed.slice(1, lastSlash);
+    const flags = trimmed.slice(lastSlash + 1);
+    try {
+      return new RegExp(source, flags).test(locationLike.href);
+    } catch {
+      return false;
+    }
+  }
+
+  const normalized = trimmed.toLowerCase();
+  const hostname = locationLike.hostname.toLowerCase();
+  return hostname === normalized || hostname.endsWith(`.${normalized}`);
 }
 
 export async function loadSettings(): Promise<PipSettings> {
