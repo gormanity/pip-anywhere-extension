@@ -278,7 +278,7 @@ function commitSiteRuleDraft(): void {
   const input = byId<HTMLInputElement>("site-rule-input");
   const pattern = input.value.trim();
   if (!pattern) {
-    setSiteRuleError("Enter a hostname or /regex/ rule.");
+    setSiteRuleError("Enter a hostname or wildcard rule.");
     return;
   }
 
@@ -323,24 +323,13 @@ function setSiteRuleError(message: string): void {
 function validateSiteRule(
   pattern: string,
 ): { ok: true } | { ok: false; message: string } {
-  if (!isRegexSiteRule(pattern)) return { ok: true };
-
-  const lastSlash = pattern.lastIndexOf("/");
-  const source = pattern.slice(1, lastSlash);
-  const flags = pattern.slice(lastSlash + 1);
-  try {
-    new RegExp(source, flags);
-    return { ok: true };
-  } catch {
+  if (/\s/.test(pattern)) {
     return {
       ok: false,
-      message: "Regex rules must use valid /pattern/flags syntax.",
+      message: "Site rules cannot contain spaces.",
     };
   }
-}
-
-function isRegexSiteRule(pattern: string): boolean {
-  return pattern.startsWith("/") && pattern.lastIndexOf("/") > 0;
+  return { ok: true };
 }
 
 function syncPositionPicker(settings: PipSettings): void {

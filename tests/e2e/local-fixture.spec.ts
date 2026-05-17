@@ -362,13 +362,13 @@ test("autosaves options page changes and shows status text", async () => {
     .toBe(400);
 });
 
-test("manages disabled site rules with validation", async () => {
+test("manages disabled site rules with wildcard validation", async () => {
   await page!.goto(`chrome-extension://${extensionId}/options.html`);
 
-  await page!.locator("#site-rule-input").fill("/[/");
+  await page!.locator("#site-rule-input").fill("bad rule");
   await page!.locator("#add-site-rule").click();
   await expect(page!.locator("#site-rule-error")).toHaveText(
-    "Regex rules must use valid /pattern/flags syntax.",
+    "Site rules cannot contain spaces.",
   );
   await expect(page!.locator(".site-rule-item")).toHaveCount(0);
 
@@ -382,16 +382,14 @@ test("manages disabled site rules with validation", async () => {
 
   await page!.getByRole("button", { name: "Edit example.com" }).click();
   await expect(page!.locator("#site-rule-input")).toHaveValue("example.com");
-  await page!.locator("#site-rule-input").fill("/watch\\/\\d+/");
+  await page!.locator("#site-rule-input").fill("*watch*");
   await page!.locator("#add-site-rule").click();
-  await expect(page!.locator(".site-rule-pattern")).toHaveText(
-    "/watch\\/\\d+/",
-  );
+  await expect(page!.locator(".site-rule-pattern")).toHaveText("*watch*");
   await expect
     .poll(() => readStoredSettings())
-    .toMatchObject({ disabledSitePatterns: ["/watch\\/\\d+/"] });
+    .toMatchObject({ disabledSitePatterns: ["*watch*"] });
 
-  await page!.getByRole("button", { name: "Remove /watch\\/\\d+/" }).click();
+  await page!.getByRole("button", { name: "Remove *watch*" }).click();
   await expect(page!.locator(".site-rule-empty")).toHaveText(
     "No disabled sites.",
   );

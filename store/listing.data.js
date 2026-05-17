@@ -30,7 +30,7 @@ FEATURES
 • Best-effort unblocking — clears video-level PiP blocks such as disablePictureInPicture when possible
 • Smarter preview handling — suppresses noisy overlays on short videos and YouTube homepage previews
 • Configurable behavior — set hover delay, minimum video length, drag-based overlay placement, hover icon size, hover icon opacity, and idle hiding
-• Site rules — disable the extension on matching hosts or URL regex patterns
+• Site rules — disable the extension on matching hosts or wildcard patterns
 • Settings portability — import and export your options as JSON
 • Useful feedback — shows clear messages when the browser requires page interaction or no eligible video exists
 

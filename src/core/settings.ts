@@ -188,20 +188,25 @@ export function sitePatternMatches(
   const trimmed = pattern.trim();
   if (!trimmed) return false;
 
-  if (trimmed.startsWith("/") && trimmed.lastIndexOf("/") > 0) {
-    const lastSlash = trimmed.lastIndexOf("/");
-    const source = trimmed.slice(1, lastSlash);
-    const flags = trimmed.slice(lastSlash + 1);
-    try {
-      return new RegExp(source, flags).test(locationLike.href);
-    } catch {
-      return false;
-    }
-  }
-
   const normalized = trimmed.toLowerCase();
   const hostname = locationLike.hostname.toLowerCase();
+  if (normalized.includes("*")) {
+    return (
+      wildcardPatternMatches(normalized, hostname) ||
+      wildcardPatternMatches(normalized, locationLike.href.toLowerCase())
+    );
+  }
+
   return hostname === normalized || hostname.endsWith(`.${normalized}`);
+}
+
+function wildcardPatternMatches(pattern: string, value: string): boolean {
+  const source = pattern.split("*").map(escapeRegExp).join(".*");
+  return new RegExp(`^${source}$`).test(value);
+}
+
+function escapeRegExp(value: string): string {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
 
 export async function loadSettings(): Promise<PipSettings> {

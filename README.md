@@ -12,7 +12,7 @@ overlay on video elements.
   size, opacity, delay, idle hiding, and minimum video length.
 - Best-effort clearing of video-level `disablePictureInPicture` blocks.
 - Options page for shortcut management, import/export, per-site disable rules
-  with regex support, PiP unblocking, and dev-only debug logging.
+  with wildcard support, PiP unblocking, and dev-only debug logging.
 
 Browser-enforced site policies may still prevent PiP on some pages. The
 extension removes blocks it can control at the video element level.

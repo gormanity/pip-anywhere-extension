@@ -26,7 +26,7 @@ The extension stores these preferences using the browser's `storage.sync` API:
 | `overlaySizePx`                 | number  | Hover overlay button size                             |
 | `overlayIdleHideMs`             | number  | Idle delay before hiding the hover overlay            |
 | `unblockVideoPiP`               | boolean | Whether to clear video-level PiP blocks when possible |
-| `disabledSitePatterns`          | array   | User-entered site disable hostnames or URL regexes    |
+| `disabledSitePatterns`          | array   | User-entered site disable hostnames or wildcard rules |
 | `debugLogging`                  | boolean | Development-build-only diagnostic logging preference  |
 
 These values are stored locally in your browser and may sync through your

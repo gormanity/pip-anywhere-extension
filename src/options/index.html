@@ -256,8 +256,8 @@
             <span class="setting-copy">
               <strong>Disable on matching sites</strong>
               <small
-                >One hostname or regular expression per line. Regex rules use
-                /pattern/ syntax and match the full URL.</small
+                >Add hostnames or wildcard rules. Use * to match variable
+                text.</small
               >
             </span>
             <div class="site-rules-control">
@@ -267,7 +267,7 @@
                   type="text"
                   autocomplete="off"
                   spellcheck="false"
-                  placeholder="example.com or /watch\\/\\d+/"
+                  placeholder="example.com or *://*.example.com/*"
                 />
                 <button
                   id="add-site-rule"

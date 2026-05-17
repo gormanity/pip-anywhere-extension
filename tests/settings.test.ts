@@ -56,7 +56,7 @@ describe("settings normalization", () => {
         overlaySizePx: 52,
         overlayIdleHideMs: 3000,
         unblockVideoPiP: false,
-        disabledSitePatterns: ["example.com", "/player/"],
+        disabledSitePatterns: ["example.com", "*player*"],
         debugLogging: true,
       }),
     ).toEqual({
@@ -69,7 +69,7 @@ describe("settings normalization", () => {
       overlaySizePx: 52,
       overlayIdleHideMs: 3000,
       unblockVideoPiP: false,
-      disabledSitePatterns: ["example.com", "/player/"],
+      disabledSitePatterns: ["example.com", "*player*"],
       debugLogging: __DEV__,
     });
   });
@@ -87,7 +87,7 @@ describe("settings normalization", () => {
     });
   });
 
-  it("matches exact hosts, subdomains, and regex site patterns", () => {
+  it("matches exact hosts, subdomains, and wildcard site patterns", () => {
     const location = {
       hostname: "video.example.com",
       href: "https://video.example.com/watch/123",
@@ -95,8 +95,9 @@ describe("settings normalization", () => {
 
     expect(sitePatternMatches("example.com", location)).toBe(true);
     expect(sitePatternMatches("other.example", location)).toBe(false);
-    expect(sitePatternMatches("/watch\\/\\d+/", location)).toBe(true);
-    expect(sitePatternMatches("/[/", location)).toBe(false);
+    expect(sitePatternMatches("*.example.com", location)).toBe(true);
+    expect(sitePatternMatches("*watch/123", location)).toBe(true);
+    expect(sitePatternMatches("*.other.example", location)).toBe(false);
     expect(
       isSiteDisabled(
         { disabledSitePatterns: ["other.example", "example.com"] },
