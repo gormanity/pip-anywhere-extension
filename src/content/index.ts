@@ -57,6 +57,10 @@ let selectionTargets: Array<{
   element: HTMLButtonElement;
   rect: DOMRect;
 }> = [];
+type SelectableVideo = {
+  video: HTMLVideoElement;
+  rect: DOMRect;
+};
 let pageUnblockerInjected = false;
 const api = getBrowserApi();
 let runtimeStarted = false;
@@ -523,26 +527,28 @@ function hideOverlaySoon(): void {
   }, 100);
 }
 
-function selectableVideos(): HTMLVideoElement[] {
+function selectableVideos(): SelectableVideo[] {
   return removeContainedVideoCandidates(
-    Array.from(document.querySelectorAll("video")).filter(isSelectableVideo),
+    Array.from(document.querySelectorAll("video")).flatMap((video) => {
+      const rect = selectableVideoRect(video);
+      return rect ? [{ video, rect }] : [];
+    }),
   );
 }
 
 function removeContainedVideoCandidates(
-  videos: HTMLVideoElement[],
-): HTMLVideoElement[] {
-  return videos.filter((video) => {
-    const rect = video.getBoundingClientRect();
+  videos: SelectableVideo[],
+): SelectableVideo[] {
+  return videos.filter((candidate) => {
     return !videos.some((other) => {
-      if (other === video) return false;
-      const otherRect = other.getBoundingClientRect();
+      if (other.video === candidate.video) return false;
       return (
-        otherRect.width * otherRect.height > rect.width * rect.height &&
-        rect.left >= otherRect.left &&
-        rect.top >= otherRect.top &&
-        rect.right <= otherRect.right &&
-        rect.bottom <= otherRect.bottom
+        other.rect.width * other.rect.height >
+          candidate.rect.width * candidate.rect.height &&
+        candidate.rect.left >= other.rect.left &&
+        candidate.rect.top >= other.rect.top &&
+        candidate.rect.right <= other.rect.right &&
+        candidate.rect.bottom <= other.rect.bottom
       );
     });
   });
@@ -554,10 +560,48 @@ function findVideoNearRect(rect: DOMRect): HTMLVideoElement | null {
   return findVideoAtPoint(centerX, centerY) ?? findBestVideo();
 }
 
-function isSelectableVideo(video: HTMLVideoElement): boolean {
+function selectableVideoRect(video: HTMLVideoElement): DOMRect | null {
   const rect = video.getBoundingClientRect();
-  if (rect.width <= 0 || rect.height <= 0) return false;
-  return isElementVisible(video);
+  if (rect.width <= 0 || rect.height <= 0) return null;
+  if (!isElementVisible(video)) return null;
+  return clipRectToVisibleArea(rect, video);
+}
+
+function clipRectToVisibleArea(
+  rect: DOMRect,
+  element: HTMLElement,
+): DOMRect | null {
+  let visibleRect: DOMRect | null = rect;
+
+  for (let node = element.parentElement; node; node = node.parentElement) {
+    const style = window.getComputedStyle(node);
+    if (
+      style.overflowX === "hidden" ||
+      style.overflowX === "clip" ||
+      style.overflowX === "scroll" ||
+      style.overflowX === "auto" ||
+      style.overflowY === "hidden" ||
+      style.overflowY === "clip" ||
+      style.overflowY === "scroll" ||
+      style.overflowY === "auto"
+    ) {
+      visibleRect = intersectRects(visibleRect, node.getBoundingClientRect());
+      if (!visibleRect) return null;
+    }
+  }
+
+  return visibleRect;
+}
+
+function intersectRects(a: DOMRect, b: DOMRect): DOMRect | null {
+  const left = Math.max(a.left, b.left);
+  const top = Math.max(a.top, b.top);
+  const right = Math.min(a.right, b.right);
+  const bottom = Math.min(a.bottom, b.bottom);
+  const width = right - left;
+  const height = bottom - top;
+  if (width <= 0 || height <= 0) return null;
+  return new DOMRect(left, top, width, height);
 }
 
 function isElementVisible(element: Element): boolean {
@@ -599,7 +643,7 @@ function startVideoSelection(): void {
     return;
   }
 
-  for (const video of videos) {
+  for (const { video, rect } of videos) {
     const element = document.createElement("button");
     element.type = "button";
     element.className = VIDEO_TARGET_CLASS;
@@ -617,7 +661,6 @@ function startVideoSelection(): void {
       },
       { signal: getRuntimeSignal() },
     );
-    const rect = video.getBoundingClientRect();
     document.documentElement.appendChild(element);
     selectionTargets.push({
       video,

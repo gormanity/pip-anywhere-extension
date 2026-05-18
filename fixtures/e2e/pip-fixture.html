@@ -81,6 +81,16 @@
         top: 120px;
       }
 
+      .clipped-video-shell {
+        width: min(640px, 100%);
+        height: 80px;
+        overflow: hidden;
+      }
+
+      .clipped-video-shell video {
+        transform: translateY(120px);
+      }
+
       .invisible-video {
         opacity: 0;
       }
@@ -172,6 +182,18 @@
           <video
             id="nested-video"
             class="nested-video"
+            src="/long.mp4"
+            preload="metadata"
+            controls
+          ></video>
+        </div>
+      </section>
+
+      <section>
+        <h2>Clipped video</h2>
+        <div class="clipped-video-shell">
+          <video
+            id="clipped-video"
             src="/long.mp4"
             preload="metadata"
             controls
