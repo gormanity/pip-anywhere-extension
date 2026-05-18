@@ -421,7 +421,7 @@ function updateSelectionTargetPositions(): void {
     target.element.style.top = `${rect.top}px`;
     target.element.style.width = `${Math.max(0, rect.width)}px`;
     target.element.style.height = `${Math.max(0, rect.height)}px`;
-    target.element.hidden = !isSelectableVideo(target.video);
+    target.element.hidden = rect.width <= 0 || rect.height <= 0;
   }
   selectionTargets = selectionTargets.filter(
     (target) => target.video.isConnected,
