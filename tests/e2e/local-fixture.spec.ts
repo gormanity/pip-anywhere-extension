@@ -353,8 +353,16 @@ test("highlights videos for explicit selection mode", async () => {
     element.style.display = "";
     element.style.opacity = "";
   });
+  await page!.locator("#eligible-video").evaluate((video) => {
+    const replacement = video.cloneNode(true) as HTMLVideoElement;
+    replacement.id = "replacement-video";
+    video.replaceWith(replacement);
+  });
+  await expect(
+    page!.locator(".ultimate-pip-video-target").first(),
+  ).toBeVisible();
   await page!.evaluate(() => window.scrollBy(0, 80));
-  await expectSelectionTargetToMatchVideo(0, "#eligible-video");
+  await expectSelectionTargetToMatchVideo(0, "#replacement-video");
   await page!.locator(".ultimate-pip-video-target").first().click();
 
   await expect

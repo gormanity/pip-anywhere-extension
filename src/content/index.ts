@@ -53,7 +53,7 @@ let pointerVideo: HTMLVideoElement | null = null;
 let overlayUpdateFrame: number | null = null;
 let selectionUpdateFrame: number | null = null;
 let selectionTargets: Array<{
-  video: HTMLVideoElement;
+  video: HTMLVideoElement | null;
   element: HTMLButtonElement;
   rect: DOMRect;
 }> = [];
@@ -413,13 +413,13 @@ function updateVisibleOverlayPosition(): void {
 function updateSelectionTargetPositions(): void {
   selectionUpdateFrame = null;
   for (const target of selectionTargets) {
-    if (!target.video.isConnected) {
-      target.element.remove();
-      continue;
-    }
-    const nextRect = target.video.getBoundingClientRect();
-    if (nextRect.width > 0 && nextRect.height > 0) {
-      target.rect = nextRect;
+    if (target.video?.isConnected) {
+      const nextRect = target.video.getBoundingClientRect();
+      if (nextRect.width > 0 && nextRect.height > 0) {
+        target.rect = nextRect;
+      }
+    } else {
+      target.video = findVideoNearRect(target.rect);
     }
     const rect = target.rect;
     target.element.style.left = `${rect.left}px`;
@@ -428,9 +428,6 @@ function updateSelectionTargetPositions(): void {
     target.element.style.height = `${rect.height}px`;
     target.element.hidden = false;
   }
-  selectionTargets = selectionTargets.filter(
-    (target) => target.video.isConnected,
-  );
   if (selectionTargets.length > 0) scheduleSelectionPositionUpdate();
 }
 
@@ -534,6 +531,12 @@ function selectableVideos(): HTMLVideoElement[] {
   );
 }
 
+function findVideoNearRect(rect: DOMRect): HTMLVideoElement | null {
+  const centerX = rect.left + rect.width / 2;
+  const centerY = rect.top + rect.height / 2;
+  return findVideoAtPoint(centerX, centerY) ?? findBestVideo();
+}
+
 function isSelectableVideo(video: HTMLVideoElement): boolean {
   const rect = video.getBoundingClientRect();
   if (rect.width <= 0 || rect.height <= 0) return false;
@@ -589,16 +592,20 @@ function startVideoSelection(): void {
       (event) => {
         event.preventDefault();
         event.stopPropagation();
+        const selectedVideo = video.isConnected
+          ? video
+          : findVideoNearRect(rect);
         clearVideoSelection();
-        void triggerPiP(video);
+        void triggerPiP(selectedVideo);
       },
       { signal: getRuntimeSignal() },
     );
+    const rect = video.getBoundingClientRect();
     document.documentElement.appendChild(element);
     selectionTargets.push({
       video,
       element,
-      rect: video.getBoundingClientRect(),
+      rect,
     });
   }
 
