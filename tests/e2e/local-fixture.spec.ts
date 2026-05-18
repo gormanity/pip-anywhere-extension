@@ -328,10 +328,13 @@ test("highlights videos for explicit selection mode", async () => {
   await expectVideoDuration("#eligible-video", 45);
   await sendSelectMessageToPage(`${server.origin}/pip-fixture.html`);
 
-  await expect(page!.locator(".ultimate-pip-video-target")).toHaveCount(5);
+  await expect(page!.locator(".ultimate-pip-video-target")).toHaveCount(6);
+  await expect(
+    page!.locator(".ultimate-pip-video-target").first(),
+  ).not.toHaveCSS("box-shadow", /9999px/);
   await expectSelectionTargetToMatchVideo(0, "#eligible-video");
   await page!.locator(".ultimate-pip-video-target").first().hover();
-  await expect(page!.locator(".ultimate-pip-video-target")).toHaveCount(5);
+  await expect(page!.locator(".ultimate-pip-video-target")).toHaveCount(6);
   await expect(
     page!.locator(".ultimate-pip-video-target").first(),
   ).toBeVisible();
@@ -379,12 +382,12 @@ test("cancels explicit video selection from outside click and escape", async () 
   await expectVideoDuration("#eligible-video", 45);
 
   await sendSelectMessageToPage(`${server.origin}/pip-fixture.html`);
-  await expect(page!.locator(".ultimate-pip-video-target")).toHaveCount(5);
+  await expect(page!.locator(".ultimate-pip-video-target")).toHaveCount(6);
   await page!.mouse.click(4, 4);
   await expect(page!.locator(".ultimate-pip-video-target")).toHaveCount(0);
 
   await sendSelectMessageToPage(`${server.origin}/pip-fixture.html`);
-  await expect(page!.locator(".ultimate-pip-video-target")).toHaveCount(5);
+  await expect(page!.locator(".ultimate-pip-video-target")).toHaveCount(6);
   await page!.keyboard.press("Escape");
   await expect(page!.locator(".ultimate-pip-video-target")).toHaveCount(0);
 });

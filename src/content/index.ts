@@ -186,9 +186,7 @@ function ensureStyle(): void {
       border: 3px solid #f59f00;
       border-radius: 10px;
       background: rgba(245, 159, 0, 0.14);
-      box-shadow:
-        0 0 0 9999px rgba(15, 23, 42, 0.18),
-        0 14px 36px rgba(15, 23, 42, 0.22);
+      box-shadow: 0 14px 36px rgba(15, 23, 42, 0.22);
       color: white;
       cursor: pointer;
       padding: 0;
@@ -526,9 +524,28 @@ function hideOverlaySoon(): void {
 }
 
 function selectableVideos(): HTMLVideoElement[] {
-  return Array.from(document.querySelectorAll("video")).filter(
-    isSelectableVideo,
+  return removeContainedVideoCandidates(
+    Array.from(document.querySelectorAll("video")).filter(isSelectableVideo),
   );
+}
+
+function removeContainedVideoCandidates(
+  videos: HTMLVideoElement[],
+): HTMLVideoElement[] {
+  return videos.filter((video) => {
+    const rect = video.getBoundingClientRect();
+    return !videos.some((other) => {
+      if (other === video) return false;
+      const otherRect = other.getBoundingClientRect();
+      return (
+        otherRect.width * otherRect.height > rect.width * rect.height &&
+        rect.left >= otherRect.left &&
+        rect.top >= otherRect.top &&
+        rect.right <= otherRect.right &&
+        rect.bottom <= otherRect.bottom
+      );
+    });
+  });
 }
 
 function findVideoNearRect(rect: DOMRect): HTMLVideoElement | null {
