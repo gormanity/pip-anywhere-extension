@@ -3,6 +3,11 @@ import {
   findBestVideo,
   togglePictureInPicture,
 } from "@/core/pip";
+import {
+  selectPickerVideos,
+  type PickerRect,
+  type PickerVideoCandidate,
+} from "@/core/video-picker";
 import { getBrowserApi } from "@/core/browser";
 import {
   DEFAULT_SETTINGS,
@@ -55,11 +60,11 @@ let selectionUpdateFrame: number | null = null;
 let selectionTargets: Array<{
   video: HTMLVideoElement | null;
   element: HTMLButtonElement;
-  rect: DOMRect;
+  rect: PickerRect;
 }> = [];
 type SelectableVideo = {
   video: HTMLVideoElement;
-  rect: DOMRect;
+  rect: PickerRect;
 };
 let pageUnblockerInjected = false;
 const api = getBrowserApi();
@@ -416,7 +421,7 @@ function updateSelectionTargetPositions(): void {
   selectionUpdateFrame = null;
   for (const target of selectionTargets) {
     if (target.video?.isConnected) {
-      const nextRect = target.video.getBoundingClientRect();
+      const nextRect = toPickerRect(target.video.getBoundingClientRect());
       if (nextRect.width > 0 && nextRect.height > 0) {
         target.rect = nextRect;
       }
@@ -528,51 +533,32 @@ function hideOverlaySoon(): void {
 }
 
 function selectableVideos(): SelectableVideo[] {
-  return removeContainedVideoCandidates(
-    Array.from(document.querySelectorAll("video")).flatMap((video) => {
-      const rect = selectableVideoRect(video);
-      return rect ? [{ video, rect }] : [];
-    }),
+  return selectPickerVideos(
+    Array.from(document.querySelectorAll("video")).map((video) =>
+      pickerVideoCandidate(video),
+    ),
   );
 }
 
-function removeContainedVideoCandidates(
-  videos: SelectableVideo[],
-): SelectableVideo[] {
-  return videos.filter((candidate) => {
-    return !videos.some((other) => {
-      if (other.video === candidate.video) return false;
-      return (
-        other.rect.width * other.rect.height >
-          candidate.rect.width * candidate.rect.height &&
-        candidate.rect.left >= other.rect.left &&
-        candidate.rect.top >= other.rect.top &&
-        candidate.rect.right <= other.rect.right &&
-        candidate.rect.bottom <= other.rect.bottom
-      );
-    });
-  });
+function pickerVideoCandidate(
+  video: HTMLVideoElement,
+): PickerVideoCandidate<HTMLVideoElement> {
+  return {
+    video,
+    rect: toPickerRect(video.getBoundingClientRect()),
+    visible: isElementVisible(video),
+    clippingRects: clippingAncestorRects(video),
+  };
 }
 
-function findVideoNearRect(rect: DOMRect): HTMLVideoElement | null {
+function findVideoNearRect(rect: PickerRect): HTMLVideoElement | null {
   const centerX = rect.left + rect.width / 2;
   const centerY = rect.top + rect.height / 2;
   return findVideoAtPoint(centerX, centerY) ?? findBestVideo();
 }
 
-function selectableVideoRect(video: HTMLVideoElement): DOMRect | null {
-  const rect = video.getBoundingClientRect();
-  if (rect.width <= 0 || rect.height <= 0) return null;
-  if (!isElementVisible(video)) return null;
-  return clipRectToVisibleArea(rect, video);
-}
-
-function clipRectToVisibleArea(
-  rect: DOMRect,
-  element: HTMLElement,
-): DOMRect | null {
-  let visibleRect: DOMRect | null = rect;
-
+function clippingAncestorRects(element: HTMLElement): PickerRect[] {
+  const rects: PickerRect[] = [];
   for (let node = element.parentElement; node; node = node.parentElement) {
     const style = window.getComputedStyle(node);
     if (
@@ -585,23 +571,22 @@ function clipRectToVisibleArea(
       style.overflowY === "scroll" ||
       style.overflowY === "auto"
     ) {
-      visibleRect = intersectRects(visibleRect, node.getBoundingClientRect());
-      if (!visibleRect) return null;
+      rects.push(toPickerRect(node.getBoundingClientRect()));
     }
   }
 
-  return visibleRect;
+  return rects;
 }
 
-function intersectRects(a: DOMRect, b: DOMRect): DOMRect | null {
-  const left = Math.max(a.left, b.left);
-  const top = Math.max(a.top, b.top);
-  const right = Math.min(a.right, b.right);
-  const bottom = Math.min(a.bottom, b.bottom);
-  const width = right - left;
-  const height = bottom - top;
-  if (width <= 0 || height <= 0) return null;
-  return new DOMRect(left, top, width, height);
+function toPickerRect(rect: DOMRect): PickerRect {
+  return {
+    left: rect.left,
+    top: rect.top,
+    right: rect.right,
+    bottom: rect.bottom,
+    width: rect.width,
+    height: rect.height,
+  };
 }
 
 function isElementVisible(element: Element): boolean {
