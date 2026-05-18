@@ -342,6 +342,17 @@ test("highlights videos for explicit selection mode", async () => {
   await expect(
     page!.locator(".ultimate-pip-video-target").first(),
   ).toBeVisible();
+  await page!.locator("#eligible-video").evaluate((video) => {
+    (video as HTMLVideoElement).style.display = "none";
+  });
+  await expect(
+    page!.locator(".ultimate-pip-video-target").first(),
+  ).toBeVisible();
+  await page!.locator("#eligible-video").evaluate((video) => {
+    const element = video as HTMLVideoElement;
+    element.style.display = "";
+    element.style.opacity = "";
+  });
   await page!.evaluate(() => window.scrollBy(0, 80));
   await expectSelectionTargetToMatchVideo(0, "#eligible-video");
   await page!.locator(".ultimate-pip-video-target").first().click();

@@ -55,6 +55,7 @@ let selectionUpdateFrame: number | null = null;
 let selectionTargets: Array<{
   video: HTMLVideoElement;
   element: HTMLButtonElement;
+  rect: DOMRect;
 }> = [];
 let pageUnblockerInjected = false;
 const api = getBrowserApi();
@@ -416,12 +417,16 @@ function updateSelectionTargetPositions(): void {
       target.element.remove();
       continue;
     }
-    const rect = target.video.getBoundingClientRect();
+    const nextRect = target.video.getBoundingClientRect();
+    if (nextRect.width > 0 && nextRect.height > 0) {
+      target.rect = nextRect;
+    }
+    const rect = target.rect;
     target.element.style.left = `${rect.left}px`;
     target.element.style.top = `${rect.top}px`;
-    target.element.style.width = `${Math.max(0, rect.width)}px`;
-    target.element.style.height = `${Math.max(0, rect.height)}px`;
-    target.element.hidden = rect.width <= 0 || rect.height <= 0;
+    target.element.style.width = `${rect.width}px`;
+    target.element.style.height = `${rect.height}px`;
+    target.element.hidden = false;
   }
   selectionTargets = selectionTargets.filter(
     (target) => target.video.isConnected,
@@ -590,7 +595,11 @@ function startVideoSelection(): void {
       { signal: getRuntimeSignal() },
     );
     document.documentElement.appendChild(element);
-    selectionTargets.push({ video, element });
+    selectionTargets.push({
+      video,
+      element,
+      rect: video.getBoundingClientRect(),
+    });
   }
 
   updateSelectionTargetPositions();
