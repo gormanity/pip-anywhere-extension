@@ -11,12 +11,18 @@ export type PickerVideoCandidate<T> = {
   video: T;
   rect: PickerRect;
   visible: boolean;
-  clippingRects: PickerRect[];
+  clippingAncestors: PickerClippingAncestor[];
 };
 
 export type SelectablePickerVideo<T> = {
   video: T;
   rect: PickerRect;
+};
+
+export type PickerClippingAncestor = {
+  rect: PickerRect;
+  clipX: boolean;
+  clipY: boolean;
 };
 
 export function selectPickerVideos<T>(
@@ -36,8 +42,8 @@ export function selectableVideoRect<T>(
   if (!candidate.visible || !hasPositiveArea(candidate.rect)) return null;
 
   let visibleRect: PickerRect | null = candidate.rect;
-  for (const clippingRect of candidate.clippingRects) {
-    visibleRect = intersectRects(visibleRect, clippingRect);
+  for (const clippingAncestor of candidate.clippingAncestors) {
+    visibleRect = clipRectToAncestor(visibleRect, clippingAncestor);
     if (!visibleRect) return null;
   }
 
@@ -65,10 +71,23 @@ export function intersectRects(
   a: PickerRect,
   b: PickerRect,
 ): PickerRect | null {
-  const left = Math.max(a.left, b.left);
-  const top = Math.max(a.top, b.top);
-  const right = Math.min(a.right, b.right);
-  const bottom = Math.min(a.bottom, b.bottom);
+  return clipRectToAncestor(a, { rect: b, clipX: true, clipY: true });
+}
+
+export function clipRectToAncestor(
+  rect: PickerRect,
+  ancestor: PickerClippingAncestor,
+): PickerRect | null {
+  const left = ancestor.clipX
+    ? Math.max(rect.left, ancestor.rect.left)
+    : rect.left;
+  const right = ancestor.clipX
+    ? Math.min(rect.right, ancestor.rect.right)
+    : rect.right;
+  const top = ancestor.clipY ? Math.max(rect.top, ancestor.rect.top) : rect.top;
+  const bottom = ancestor.clipY
+    ? Math.min(rect.bottom, ancestor.rect.bottom)
+    : rect.bottom;
   const width = right - left;
   const height = bottom - top;
   if (width <= 0 || height <= 0) return null;

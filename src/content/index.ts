@@ -5,6 +5,7 @@ import {
 } from "@/core/pip";
 import {
   selectPickerVideos,
+  type PickerClippingAncestor,
   type PickerRect,
   type PickerVideoCandidate,
 } from "@/core/video-picker";
@@ -498,7 +499,6 @@ function isVideoEligibleForOverlay(video: HTMLVideoElement): boolean {
 
 function isYouTubeThumbnailPreview(video: HTMLVideoElement): boolean {
   if (location.hostname !== "www.youtube.com") return false;
-  if (location.pathname === "/watch") return false;
   return Boolean(
     video.closest(
       [
@@ -534,9 +534,9 @@ function hideOverlaySoon(): void {
 
 function selectableVideos(): SelectableVideo[] {
   return selectPickerVideos(
-    Array.from(document.querySelectorAll("video")).map((video) =>
-      pickerVideoCandidate(video),
-    ),
+    Array.from(document.querySelectorAll("video"))
+      .filter((video) => !isYouTubeThumbnailPreview(video))
+      .map((video) => pickerVideoCandidate(video)),
   );
 }
 
@@ -547,7 +547,7 @@ function pickerVideoCandidate(
     video,
     rect: toPickerRect(video.getBoundingClientRect()),
     visible: isElementVisible(video),
-    clippingRects: clippingAncestorRects(video),
+    clippingAncestors: clippingAncestors(video),
   };
 }
 
@@ -557,25 +557,26 @@ function findVideoNearRect(rect: PickerRect): HTMLVideoElement | null {
   return findVideoAtPoint(centerX, centerY) ?? findBestVideo();
 }
 
-function clippingAncestorRects(element: HTMLElement): PickerRect[] {
-  const rects: PickerRect[] = [];
+function clippingAncestors(element: HTMLElement): PickerClippingAncestor[] {
+  const ancestors: PickerClippingAncestor[] = [];
   for (let node = element.parentElement; node; node = node.parentElement) {
     const style = window.getComputedStyle(node);
-    if (
-      style.overflowX === "hidden" ||
-      style.overflowX === "clip" ||
-      style.overflowX === "scroll" ||
-      style.overflowX === "auto" ||
-      style.overflowY === "hidden" ||
-      style.overflowY === "clip" ||
-      style.overflowY === "scroll" ||
-      style.overflowY === "auto"
-    ) {
-      rects.push(toPickerRect(node.getBoundingClientRect()));
+    const clipX = clipsOverflow(style.overflowX);
+    const clipY = clipsOverflow(style.overflowY);
+    if (clipX || clipY) {
+      ancestors.push({
+        rect: toPickerRect(node.getBoundingClientRect()),
+        clipX,
+        clipY,
+      });
     }
   }
 
-  return rects;
+  return ancestors;
+}
+
+function clipsOverflow(overflow: string): boolean {
+  return overflow === "hidden" || overflow === "clip";
 }
 
 function toPickerRect(rect: DOMRect): PickerRect {

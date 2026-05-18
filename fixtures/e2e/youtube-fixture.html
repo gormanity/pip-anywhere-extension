@@ -35,6 +35,10 @@
       ytd-thumbnail video {
         width: 240px;
       }
+
+      .youtube-watch-layout {
+        overflow-x: hidden;
+      }
     </style>
   </head>
   <body>
@@ -58,12 +62,14 @@
 
       <section>
         <h2>Watch page main player shape</h2>
-        <video
-          id="youtube-watch-video"
-          src="/long.mp4"
-          preload="metadata"
-          controls
-        ></video>
+        <div class="youtube-watch-layout">
+          <video
+            id="youtube-watch-video"
+            src="/long.mp4"
+            preload="metadata"
+            controls
+          ></video>
+        </div>
       </section>
     </main>
   </body>

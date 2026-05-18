@@ -133,6 +133,15 @@ test("keeps youtube watch page videos eligible", async () => {
   await expect(page!.locator(".ultimate-pip-overlay")).toBeVisible();
 });
 
+test("includes youtube watch page videos in explicit selection mode", async () => {
+  await page!.goto(`${server.youtubeOrigin}/watch`);
+  await expectVideoDuration("#youtube-watch-video", 45);
+  await sendSelectMessageToPage(`${server.youtubeOrigin}/watch`);
+
+  await expect(page!.locator(".ultimate-pip-video-target")).toHaveCount(1);
+  await expectSelectionTargetToMatchVideo(0, "#youtube-watch-video");
+});
+
 test("disables the hover overlay when configured", async () => {
   await setSettings({ hoverOverlayEnabled: false });
   await page!.goto(`${server.origin}/pip-fixture.html`);

@@ -1,8 +1,10 @@
 import { describe, expect, it } from "vitest";
 import {
+  clipRectToAncestor,
   intersectRects,
   selectPickerVideos,
   selectableVideoRect,
+  type PickerClippingAncestor,
   type PickerRect,
   type PickerVideoCandidate,
 } from "@/core/video-picker";
@@ -28,14 +30,25 @@ function candidate(
   sourceRect: PickerRect,
   options: {
     visible?: boolean;
-    clippingRects?: PickerRect[];
+    clippingAncestors?: PickerClippingAncestor[];
   } = {},
 ): PickerVideoCandidate<string> {
   return {
     video,
     rect: sourceRect,
     visible: options.visible ?? true,
-    clippingRects: options.clippingRects ?? [],
+    clippingAncestors: options.clippingAncestors ?? [],
+  };
+}
+
+function clip(
+  clipRect: PickerRect,
+  axes: { x?: boolean; y?: boolean } = { x: true, y: true },
+): PickerClippingAncestor {
+  return {
+    rect: clipRect,
+    clipX: axes.x ?? false,
+    clipY: axes.y ?? false,
   };
 }
 
@@ -66,7 +79,7 @@ describe("video picker geometry", () => {
     expect(
       selectableVideoRect(
         candidate("partial", rect(20, 30, 640, 360), {
-          clippingRects: [rect(0, 0, 700, 160)],
+          clippingAncestors: [clip(rect(0, 0, 700, 160))],
         }),
       ),
     ).toEqual(rect(20, 30, 640, 130));
@@ -76,10 +89,20 @@ describe("video picker geometry", () => {
     expect(
       selectableVideoRect(
         candidate("clipped", rect(20, 200, 640, 360), {
-          clippingRects: [rect(0, 0, 700, 80)],
+          clippingAncestors: [clip(rect(0, 0, 700, 80))],
         }),
       ),
     ).toBeNull();
+  });
+
+  it("does not vertically clip videos from horizontal-only overflow ancestors", () => {
+    expect(
+      selectableVideoRect(
+        candidate("youtube-watch", rect(20, 200, 640, 360), {
+          clippingAncestors: [clip(rect(0, 0, 700, 80), { x: true })],
+        }),
+      ),
+    ).toEqual(rect(20, 200, 640, 360));
   });
 
   it("removes smaller candidates fully contained by a larger video", () => {
@@ -110,5 +133,15 @@ describe("video picker geometry", () => {
     expect(
       intersectRects(rect(10, 20, 100, 80), rect(200, 20, 20, 20)),
     ).toBeNull();
+  });
+
+  it("clips only the axes controlled by an ancestor", () => {
+    expect(
+      clipRectToAncestor(rect(10, 120, 120, 80), {
+        rect: rect(50, 0, 40, 20),
+        clipX: true,
+        clipY: false,
+      }),
+    ).toEqual(rect(50, 120, 40, 80));
   });
 });
