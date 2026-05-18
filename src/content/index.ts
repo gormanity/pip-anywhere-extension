@@ -191,15 +191,19 @@ function ensureStyle(): void {
     }
     .${VIDEO_TARGET_CLASS} {
       box-sizing: border-box;
-      position: fixed;
-      z-index: 2147483646;
-      border: 3px solid #f59f00;
-      border-radius: 10px;
-      background: rgba(245, 159, 0, 0.14);
-      box-shadow: 0 14px 36px rgba(15, 23, 42, 0.22);
-      color: white;
-      cursor: pointer;
-      padding: 0;
+      position: fixed !important;
+      display: block !important;
+      visibility: visible !important;
+      opacity: 1 !important;
+      pointer-events: auto !important;
+      z-index: 2147483646 !important;
+      border: 3px solid #f59f00 !important;
+      border-radius: 10px !important;
+      background: rgba(245, 159, 0, 0.14) !important;
+      box-shadow: 0 14px 36px rgba(15, 23, 42, 0.22) !important;
+      color: white !important;
+      cursor: pointer !important;
+      padding: 0 !important;
     }
     .${VIDEO_TARGET_CLASS}::after {
       content: "Open in PiP";

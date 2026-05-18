@@ -140,6 +140,10 @@ test("includes youtube watch page videos in explicit selection mode", async () =
 
   await expect(page!.locator(".ultimate-pip-video-target")).toHaveCount(1);
   await expectSelectionTargetToMatchVideo(0, "#youtube-watch-video");
+  await page!.locator(".ultimate-pip-video-target").hover();
+  await expect(page!.locator(".ultimate-pip-video-target")).toHaveCount(1);
+  await expect(page!.locator(".ultimate-pip-video-target")).toBeVisible();
+  await expectSelectionTargetToMatchVideo(0, "#youtube-watch-video");
 });
 
 test("disables the hover overlay when configured", async () => {
