@@ -4,7 +4,7 @@
   "private": true,
   "type": "module",
   "packageManager": "pnpm@10.14.0",
-  "description": "Chrome and Edge picture-in-picture controls for HTML5 video",
+  "description": "A Chromium browser extension that upgrades picture-in-picture across HTML5 video",
   "author": "John Gorman",
   "license": "MIT",
   "scripts": {

@@ -16,7 +16,7 @@ export default {
 
   copy: {
     shortDescription:
-      "Keyboard, video picker, and hover picture-in-picture controls for HTML5 video.",
+      "Upgrade picture-in-picture across HTML5 video with smart controls, deep customization, and site restriction unblocking.",
 
     detailedDescription: `PiP Anywhere gives you faster, more reliable picture-in-picture controls for HTML5 video in Chrome and Edge.
 

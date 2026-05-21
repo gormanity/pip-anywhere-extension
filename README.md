@@ -1,8 +1,8 @@
 # PiP Anywhere
 
-PiP Anywhere is a Chrome and Edge extension for triggering native HTML5
-picture-in-picture from a keyboard shortcut, the toolbar icon, or a hover
-overlay on video elements.
+PiP Anywhere is a Chromium browser extension that upgrades picture-in-picture
+across HTML5 video with smart controls, deep customization, and site restriction
+unblocking.
 
 ## Features
 
