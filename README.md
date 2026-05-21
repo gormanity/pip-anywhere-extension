@@ -28,6 +28,9 @@ pnpm run check
 Development builds are emitted to `dist-dev/{chrome,edge}`. Production builds
 are emitted to `dist/{chrome,edge}`.
 
+Local Chrome dev/prod coexistence is documented in `PROJECT.md`. Load
+`dist/chrome` for local prod and `dist-dev/chrome` for local dev.
+
 For a repeatable local smoke test, open
 `fixtures/manual/pip-test.html` after loading a dev build. It includes a normal
 video, a video that repeatedly tries to disable PiP, and an iframe video.

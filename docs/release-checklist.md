@@ -9,6 +9,17 @@
    - `releases/ultimate-pip-<version>-chrome.zip`
    - `releases/ultimate-pip-<version>-edge.zip`
 
+## GitHub Release
+
+Pushing a `v*` tag runs `.github/workflows/release.yml`, reruns
+`pnpm run check`, packages Chrome and Edge zips, and publishes a GitHub release
+with generated notes.
+
+```bash
+jj tag set v<version> -r <revision>
+jj git push --tag v<version>
+```
+
 ## Manual Smoke
 
 Run `docs/manual-smoke.md` before submitting store builds.

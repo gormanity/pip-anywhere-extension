@@ -13,6 +13,10 @@ import {
 import { tmpdir } from "node:os";
 import { extname, join, resolve } from "node:path";
 import { chromium, type BrowserContext, type Page } from "@playwright/test";
+import {
+  CHROMIUM_DEV_EXTENSION_ID,
+  CHROMIUM_LOCAL_PROD_EXTENSION_ID,
+} from "../../src/core/runtime-messages";
 
 const CONTENT_TYPES: Record<string, string> = {
   ".html": "text/html; charset=utf-8",
@@ -94,23 +98,81 @@ export async function launchExtensionContext(): Promise<{
   extensionId: string;
 }> {
   const extensionPath = resolve("dist-dev/chrome");
-  const userDataDir = await mkdtemp(join(tmpdir(), "pip-anywhere-e2e-"));
-  const context = await chromium.launchPersistentContext(userDataDir, {
-    channel: "chromium",
-    headless: process.env.HEADED !== "1",
-    ignoreHTTPSErrors: true,
-    args: [
-      `--disable-extensions-except=${extensionPath}`,
-      `--load-extension=${extensionPath}`,
-      "--host-resolver-rules=MAP www.youtube.com 127.0.0.1",
-      "--ignore-certificate-errors",
-    ],
-  });
+  const context = await launchContextWithExtensions([extensionPath]);
 
   let [worker] = context.serviceWorkers();
   worker ??= await context.waitForEvent("serviceworker");
   const extensionId = worker.url().split("/")[2];
   return { context, extensionId };
+}
+
+export async function launchProductionExtensionContext(): Promise<{
+  context: BrowserContext;
+  extensionId: string;
+}> {
+  const extensionPath = resolve("dist/chrome");
+  const context = await launchContextWithExtensions([extensionPath]);
+
+  await expectServiceWorker(context, CHROMIUM_LOCAL_PROD_EXTENSION_ID);
+  return { context, extensionId: CHROMIUM_LOCAL_PROD_EXTENSION_ID };
+}
+
+export async function launchCoexistingExtensionContext(): Promise<{
+  context: BrowserContext;
+  prodExtensionId: string;
+  devExtensionId: string;
+}> {
+  const prodExtensionPath = resolve("dist/chrome");
+  const devExtensionPath = resolve("dist-dev/chrome");
+  const context = await launchContextWithExtensions([
+    prodExtensionPath,
+    devExtensionPath,
+  ]);
+
+  await expectServiceWorker(context, CHROMIUM_LOCAL_PROD_EXTENSION_ID);
+  await expectServiceWorker(context, CHROMIUM_DEV_EXTENSION_ID);
+  return {
+    context,
+    prodExtensionId: CHROMIUM_LOCAL_PROD_EXTENSION_ID,
+    devExtensionId: CHROMIUM_DEV_EXTENSION_ID,
+  };
+}
+
+async function launchContextWithExtensions(
+  extensionPaths: string[],
+): Promise<BrowserContext> {
+  const userDataDir = await mkdtemp(join(tmpdir(), "pip-anywhere-e2e-"));
+  return chromium.launchPersistentContext(userDataDir, {
+    channel: "chromium",
+    headless: process.env.HEADED !== "1",
+    ignoreHTTPSErrors: true,
+    args: [
+      `--disable-extensions-except=${extensionPaths.join(",")}`,
+      `--load-extension=${extensionPaths.join(",")}`,
+      "--host-resolver-rules=MAP www.youtube.com 127.0.0.1",
+      "--ignore-certificate-errors",
+    ],
+  });
+}
+
+async function expectServiceWorker(
+  context: BrowserContext,
+  extensionId: string,
+): Promise<void> {
+  if (
+    context
+      .serviceWorkers()
+      .some((worker) =>
+        worker.url().startsWith(`chrome-extension://${extensionId}/`),
+      )
+  ) {
+    return;
+  }
+
+  await context.waitForEvent("serviceworker", {
+    predicate: (worker) =>
+      worker.url().startsWith(`chrome-extension://${extensionId}/`),
+  });
 }
 
 export async function closePage(page: Page | undefined): Promise<void> {

@@ -64,6 +64,29 @@ describe("runtime coordinator", () => {
     expect(stopped).toBe(0);
   });
 
+  it("starts and stops active runtime idempotently", () => {
+    const coordinator = createRuntimeCoordinator({
+      isDev: false,
+      startActive: () => {
+        started += 1;
+      },
+      stopActive: () => {
+        stopped += 1;
+      },
+      win,
+      now: () => nowMs,
+    });
+
+    coordinator.start();
+    coordinator.start();
+    advance(500);
+    expect(started).toBe(1);
+
+    coordinator.stop();
+    coordinator.stop();
+    expect(stopped).toBe(1);
+  });
+
   it("keeps prod suspended while dev heartbeat is fresh", () => {
     createRuntimeCoordinator({
       isDev: false,

@@ -33,6 +33,8 @@ export interface RuntimeCoordinatorOptions {
   isDev: boolean;
   startActive: () => void;
   stopActive: () => void;
+  onResume?: () => void;
+  onSuspend?: () => void;
   win?: RuntimeWindow;
   now?: () => number;
   timings?: Partial<typeof RUNTIME_COORDINATOR_TIMINGS>;
@@ -45,6 +47,8 @@ export interface RuntimeCoordinator {
 
 export function createRuntimeCoordinator({
   isDev,
+  onResume,
+  onSuspend,
   startActive,
   stopActive,
   win = window,
@@ -58,9 +62,14 @@ export function createRuntimeCoordinator({
   let graceTimer: RuntimeTimer | null = null;
   let staleTimer: RuntimeTimer | null = null;
   let lastDevHeartbeat = Number.NEGATIVE_INFINITY;
+  let suspended = false;
 
   function startRuntime(): void {
     if (active) return;
+    if (suspended) {
+      suspended = false;
+      onResume?.();
+    }
     active = true;
     startActive();
   }
@@ -103,6 +112,10 @@ export function createRuntimeCoordinator({
     if (event.source !== win || !isDevHeartbeat(event.data)) return;
 
     lastDevHeartbeat = now();
+    if (!suspended) {
+      suspended = true;
+      onSuspend?.();
+    }
     stopRuntime();
     scheduleStaleCheck();
   }

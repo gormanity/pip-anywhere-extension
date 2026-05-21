@@ -1,11 +1,13 @@
 import { getBrowserApi } from "@/core/browser";
 import { ensureDefaultSettings } from "@/core/settings";
+import { installDuplicateRuntime } from "./duplicate-runtime";
 
 const api = getBrowserApi();
 const TOGGLE_MESSAGE = { type: "ultimate-pip.toggle" };
 const SELECT_MESSAGE = { type: "ultimate-pip.select-video" };
 const UNSCRIPTABLE_URL_PATTERN =
   /^(about|chrome|chrome-extension|edge|moz-extension):/i;
+const duplicateRuntime = installDuplicateRuntime({ api, isDev: __DEV__ });
 
 interface FrameVideoCandidate {
   hasVideo: boolean;
@@ -157,6 +159,7 @@ async function getActiveTab(): Promise<chrome.tabs.Tab | undefined> {
 }
 
 async function sendToggleToTab(tab?: chrome.tabs.Tab): Promise<void> {
+  if (duplicateRuntime.isDuplicateDisabled()) return;
   tab ??= await getActiveTab();
   if (!tab?.id) return;
 
@@ -182,6 +185,7 @@ async function sendToggleToTab(tab?: chrome.tabs.Tab): Promise<void> {
 }
 
 async function sendSelectToTab(tab?: chrome.tabs.Tab): Promise<void> {
+  if (duplicateRuntime.isDuplicateDisabled()) return;
   tab ??= await getActiveTab();
   if (!tab?.id) return;
 

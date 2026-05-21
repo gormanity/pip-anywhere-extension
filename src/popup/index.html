@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>PiP Anywhere</title>
+    <link rel="stylesheet" href="popup.css" />
+  </head>
+  <body>
+    <main>
+      <header>
+        <img src="icon48.png" alt="" aria-hidden="true" />
+        <div>
+          <h1>PiP Anywhere</h1>
+          <p id="build-label"></p>
+        </div>
+      </header>
+
+      <section id="duplicate-banner" role="status" hidden>
+        Production is disabled while the dev build is active.
+      </section>
+
+      <button id="open-options" type="button">Open Settings</button>
+    </main>
+    <script type="module" src="popup.js"></script>
+  </body>
+</html>

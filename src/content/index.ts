@@ -19,6 +19,10 @@ import {
   type PipSettings,
 } from "@/core/settings";
 import { createRuntimeCoordinator } from "@/core/runtime-coordinator";
+import {
+  RUNTIME_STATE_MESSAGE,
+  isContentDuplicateStatusRequestMessage,
+} from "@/core/runtime-messages";
 
 const OVERLAY_CLASS = "ultimate-pip-overlay";
 const TOAST_CLASS = "ultimate-pip-toast";
@@ -79,6 +83,7 @@ let storageChangeListener:
 let runtimeMessageListener:
   | Parameters<typeof api.runtime.onMessage.addListener>[0]
   | null = null;
+let disabledByDuplicate = false;
 const diagnostics: DiagnosticsState = {
   videosObserved: 0,
   overlaySkippedShortVideo: 0,
@@ -101,6 +106,25 @@ function recordDiagnostic(
 ): void {
   if (!__DEV__) return;
   log("diagnostic", event, { details, state: diagnostics });
+}
+
+function sendRuntimeState(nextDisabledByDuplicate: boolean): void {
+  if (__DEV__) return;
+  disabledByDuplicate = nextDisabledByDuplicate;
+
+  try {
+    api.runtime.sendMessage(
+      {
+        type: RUNTIME_STATE_MESSAGE,
+        disabledByDuplicate: nextDisabledByDuplicate,
+      },
+      () => {
+        void api.runtime.lastError;
+      },
+    );
+  } catch {
+    // Content scripts can outlive their extension context during reloads.
+  }
 }
 
 function getRuntimeSignal(): AbortSignal {
@@ -1018,9 +1042,11 @@ function stopContentRuntime(): void {
         detail: {
           enabled: false,
           debug: false,
+          destroy: true,
         },
       }),
     );
+    pageUnblockerInjected = false;
   }
 
   runtimeAbort?.abort();
@@ -1066,17 +1092,44 @@ function stopContentRuntime(): void {
 
 const runtimeGlobals = globalThis as unknown as Record<
   string,
-  ReturnType<typeof createRuntimeCoordinator>
+  ReturnType<typeof createRuntimeCoordinator> | boolean
 >;
 const existingRuntime = runtimeGlobals[GLOBAL_RUNTIME_KEY];
-existingRuntime?.stop();
+if (
+  existingRuntime &&
+  typeof existingRuntime === "object" &&
+  "stop" in existingRuntime
+) {
+  existingRuntime.stop();
+}
+
+const DUPLICATE_STATUS_LISTENER_KEY = `${GLOBAL_RUNTIME_KEY}_statusListener`;
+if (!runtimeGlobals[DUPLICATE_STATUS_LISTENER_KEY]) {
+  api.runtime.onMessage.addListener((message, _sender, sendResponse) => {
+    if (!isContentDuplicateStatusRequestMessage(message)) return false;
+    sendResponse({
+      ok: true,
+      data: { duplicateDetected: disabledByDuplicate },
+    });
+    return false;
+  });
+  runtimeGlobals[DUPLICATE_STATUS_LISTENER_KEY] = true;
+}
 
 runtimeGlobals[GLOBAL_RUNTIME_KEY] = createRuntimeCoordinator({
   isDev: __DEV__,
+  onResume: () => {
+    sendRuntimeState(false);
+  },
+  onSuspend: () => {
+    sendRuntimeState(true);
+  },
   startActive: () => {
+    sendRuntimeState(false);
     void startContentRuntime();
   },
   stopActive: stopContentRuntime,
 });
 
-runtimeGlobals[GLOBAL_RUNTIME_KEY].start();
+const runtime = runtimeGlobals[GLOBAL_RUNTIME_KEY];
+if (typeof runtime === "object" && "start" in runtime) runtime.start();

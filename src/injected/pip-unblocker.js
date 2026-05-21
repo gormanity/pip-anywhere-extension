@@ -12,6 +12,7 @@
     installed: false,
     originalDescriptor: null,
   };
+  let observer = null;
 
   function log(...args) {
     if (state.debug) {
@@ -92,7 +93,8 @@
   }
 
   function observeDom() {
-    const observer = new MutationObserver((mutations) => {
+    if (observer) return;
+    observer = new MutationObserver((mutations) => {
       if (!state.enabled) return;
 
       for (const mutation of mutations) {
@@ -115,12 +117,38 @@
     });
   }
 
-  window.addEventListener(configEvent, (event) => {
+  function restorePropertyOverride() {
+    if (!state.installed || !state.originalDescriptor) return;
+    Object.defineProperty(
+      HTMLVideoElement.prototype,
+      "disablePictureInPicture",
+      state.originalDescriptor,
+    );
+    state.installed = false;
+    state.originalDescriptor = null;
+  }
+
+  function destroy() {
+    state.enabled = false;
+    observer?.disconnect();
+    observer = null;
+    restorePropertyOverride();
+    window.removeEventListener(configEvent, onConfig);
+    emitDiagnostic("destroyed");
+  }
+
+  function onConfig(event) {
     const detail = event instanceof CustomEvent ? event.detail : {};
+    if (detail?.destroy === true) {
+      destroy();
+      return;
+    }
     state.enabled = detail?.enabled !== false;
     state.debug = detail?.debug === true;
     if (state.enabled) cleanAllVideos();
-  });
+  }
+
+  window.addEventListener(configEvent, onConfig);
 
   installPropertyOverride();
   observeDom();
