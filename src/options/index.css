@@ -329,6 +329,10 @@ textarea:focus-visible {
   grid-template-columns: minmax(0, 1fr) minmax(260px, 360px);
 }
 
+.select-row {
+  grid-template-columns: minmax(0, 1fr) minmax(260px, 360px);
+}
+
 .shortcut-control {
   min-width: 0;
 }

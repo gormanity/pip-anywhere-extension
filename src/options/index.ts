@@ -8,6 +8,19 @@ import {
 import { getBrowserApi } from "@/core/browser";
 
 const COMMAND_NAME = "toggle-picture-in-picture";
+const SELECT_COMMAND_NAME = "select-picture-in-picture-video";
+const SHORTCUT_FIELDS = [
+  {
+    commandName: COMMAND_NAME,
+    inputId: "auto-shortcut",
+    fallback: "Alt+Shift+P",
+  },
+  {
+    commandName: SELECT_COMMAND_NAME,
+    inputId: "choose-shortcut",
+    fallback: "Not set",
+  },
+] as const;
 const api = getBrowserApi();
 let saveTimer: number | null = null;
 let statusTimer: number | null = null;
@@ -21,10 +34,10 @@ function byId<T extends HTMLElement>(id: string): T {
   return element as T;
 }
 
-function manifestShortcut(): string {
+function manifestShortcut(commandName: string, fallback: string): string {
   const manifest = api.runtime.getManifest();
-  const command = manifest.commands?.[COMMAND_NAME];
-  return command?.suggested_key?.default ?? "Alt+Shift+P";
+  const command = manifest.commands?.[commandName];
+  return command?.suggested_key?.default ?? fallback;
 }
 
 function initVersionLabel(): void {
@@ -35,13 +48,20 @@ function initVersionLabel(): void {
 }
 
 async function updateShortcutText(): Promise<void> {
-  const shortcut = byId<HTMLInputElement>("shortcut");
   try {
     const commands = await api.commands.getAll();
-    const command = commands.find((item) => item.name === COMMAND_NAME);
-    shortcut.value = command?.shortcut || "Not set";
+    for (const field of SHORTCUT_FIELDS) {
+      const shortcut = byId<HTMLInputElement>(field.inputId);
+      const command = commands.find((item) => item.name === field.commandName);
+      shortcut.value = command?.shortcut || "Not set";
+    }
   } catch {
-    shortcut.value = manifestShortcut();
+    for (const field of SHORTCUT_FIELDS) {
+      byId<HTMLInputElement>(field.inputId).value = manifestShortcut(
+        field.commandName,
+        field.fallback,
+      );
+    }
   }
 }
 
@@ -53,17 +73,40 @@ function shortcutManagementUrl(): string | null {
 }
 
 function initShortcutButton(): void {
-  const button = byId<HTMLButtonElement>("manage-shortcut");
+  const buttons = [
+    byId<HTMLButtonElement>("manage-auto-shortcut"),
+    byId<HTMLButtonElement>("manage-choose-shortcut"),
+  ];
   const url = shortcutManagementUrl();
   if (!url) {
-    button.hidden = true;
+    for (const button of buttons) button.hidden = true;
     return;
   }
 
-  button.addEventListener("click", () => {
-    void api.tabs.create({ url });
-    void updateShortcutText();
-  });
+  for (const button of buttons) {
+    button.addEventListener("click", () => {
+      void api.tabs.create({ url });
+      void updateShortcutText();
+    });
+  }
+}
+
+function initToolbarModePreview(): void {
+  byId<HTMLSelectElement>("toolbar-action-mode").addEventListener(
+    "change",
+    () => {
+      void updateShortcutText();
+    },
+  );
+}
+
+function readToolbarActionMode(): PipSettings["toolbarActionMode"] {
+  const value = byId<HTMLSelectElement>("toolbar-action-mode").value;
+  return value === "auto" || value === "choose" ? value : "choose";
+}
+
+function writeToolbarActionMode(mode: PipSettings["toolbarActionMode"]): void {
+  byId<HTMLSelectElement>("toolbar-action-mode").value = mode;
 }
 
 function readForm(): PipSettings {
@@ -87,6 +130,7 @@ function readForm(): PipSettings {
     overlayIdleHideMs: Number(
       byId<HTMLInputElement>("overlay-idle-hide").value,
     ),
+    toolbarActionMode: readToolbarActionMode(),
     unblockVideoPiP: byId<HTMLInputElement>("unblock-video-pip").checked,
     disabledSitePatterns: readSiteRules(),
     debugLogging: __DEV__
@@ -129,6 +173,7 @@ function writeForm(settings: PipSettings): void {
     settings.overlayIdleHideMs === 0
       ? "Off"
       : `${settings.overlayIdleHideMs} ms`;
+  writeToolbarActionMode(settings.toolbarActionMode);
   renderSiteRules(settings.disabledSitePatterns);
   byId<HTMLInputElement>("unblock-video-pip").checked =
     settings.unblockVideoPiP;
@@ -442,6 +487,7 @@ async function init(): Promise<void> {
   initVersionLabel();
   await updateShortcutText();
   initShortcutButton();
+  initToolbarModePreview();
   initStatusHover();
   initPositionPicker();
   initSiteRules();

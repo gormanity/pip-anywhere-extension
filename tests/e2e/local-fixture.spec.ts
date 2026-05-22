@@ -407,7 +407,7 @@ test("cancels explicit video selection from outside click and escape", async () 
 
 test("autosaves options page changes and shows status text", async () => {
   await page!.goto(`chrome-extension://${extensionId}/options.html`);
-  await page!.locator("#hover-delay-ms").fill("400");
+  await page!.locator("#toolbar-action-mode").selectOption("auto");
 
   await expect(page!.locator("#status")).toHaveText("Settings saved.");
   await expect(page!.locator("#status")).toBeInViewport();
@@ -415,16 +415,18 @@ test("autosaves options page changes and shows status text", async () => {
     .poll(() =>
       page!.evaluate(
         async (settingsKey) =>
-          new Promise<number>((resolve) => {
+          new Promise<string>((resolve) => {
             chrome.storage.sync.get([settingsKey], (result) => {
-              const settings = result[settingsKey] as { hoverDelayMs: number };
-              resolve(settings.hoverDelayMs);
+              const settings = result[settingsKey] as {
+                toolbarActionMode: string;
+              };
+              resolve(settings.toolbarActionMode);
             });
           }),
         "ultimatePip.settings",
       ),
     )
-    .toBe(400);
+    .toBe("auto");
 });
 
 test("manages disabled site rules with wildcard validation", async () => {
@@ -505,6 +507,7 @@ test("restores default options and persists them", async () => {
     overlayOpacityPercent: 55,
     overlaySizePx: 60,
     overlayIdleHideMs: 1000,
+    toolbarActionMode: "auto",
     unblockVideoPiP: false,
   });
 
@@ -521,6 +524,7 @@ test("restores default options and persists them", async () => {
   await expect(page!.locator("#overlay-opacity")).toHaveValue("86");
   await expect(page!.locator("#overlay-size")).toHaveValue("42");
   await expect(page!.locator("#overlay-idle-hide")).toHaveValue("2500");
+  await expect(page!.locator("#toolbar-action-mode")).toHaveValue("choose");
   await expect(page!.locator("#hover-overlay-enabled")).toBeChecked();
   await expect(page!.locator("#unblock-video-pip")).toBeChecked();
 
@@ -535,6 +539,7 @@ test("restores default options and persists them", async () => {
       overlayOpacityPercent: 86,
       overlaySizePx: 42,
       overlayIdleHideMs: 2500,
+      toolbarActionMode: "choose",
       unblockVideoPiP: true,
     });
 });
@@ -548,11 +553,16 @@ test("shows shortcut text and opens browser shortcut management", async () => {
   await expect(page!.locator("#version-label")).toHaveText(
     new RegExp(`^Version ${manifestVersion}-dev, built \\d{4}-\\d{2}-\\d{2}$`),
   );
-  await expect(page!.locator("#shortcut")).not.toHaveValue("");
-  await expect(page!.locator("#shortcut")).toHaveAttribute("readonly", "");
+  await expect(page!.locator("#auto-shortcut")).not.toHaveValue("");
+  await expect(page!.locator("#auto-shortcut")).toHaveAttribute("readonly", "");
+  await expect(page!.locator("#choose-shortcut")).toHaveValue("Not set");
+  await expect(page!.locator("#choose-shortcut")).toHaveAttribute(
+    "readonly",
+    "",
+  );
 
   const shortcutsPagePromise = context.waitForEvent("page");
-  await page!.locator("#manage-shortcut").click();
+  await page!.locator("#manage-choose-shortcut").click();
   const shortcutsPage = await shortcutsPagePromise;
   await expect(shortcutsPage).toHaveURL("chrome://extensions/shortcuts");
   await shortcutsPage.close();
@@ -625,6 +635,7 @@ async function setSettings(
         overlayOpacityPercent: 86,
         overlaySizePx: 42,
         overlayIdleHideMs: 2500,
+        toolbarActionMode: "choose",
         unblockVideoPiP: true,
         disabledSitePatterns: [],
         debugLogging: false,
@@ -712,6 +723,7 @@ interface TestSettings {
   overlayOpacityPercent: number;
   overlaySizePx: number;
   overlayIdleHideMs: number;
+  toolbarActionMode: "auto" | "choose";
   unblockVideoPiP: boolean;
   disabledSitePatterns: string[];
   debugLogging: boolean;
