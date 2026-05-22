@@ -10,6 +10,7 @@ unblocking.
 - Toolbar action that highlights page videos so you can choose the PiP target.
 - Hover overlay button for HTML5 video elements, with configurable placement,
   size, opacity, delay, idle hiding, and minimum video length.
+- Streaming site PiP unblocking, including Netflix and Disney+.
 - Best-effort clearing of video-level `disablePictureInPicture` blocks.
 - Options page for shortcut management, import/export, per-site disable rules
   with wildcard support, PiP unblocking, and dev-only debug logging.

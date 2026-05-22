@@ -63,6 +63,15 @@ operated by this extension.
 
 None. The extension makes no network requests.
 
+## Extension-to-extension communication
+
+On Chromium builds, PiP Anywhere may allow messages from specific PiP Anywhere
+development or production extension IDs so local development and installed store
+builds can detect each other and avoid running duplicate content scripts. This
+communication is limited to duplicate-build presence checks. It does not send
+browsing history, page content, video content, personal data, or analytics to
+external services.
+
 ---
 
 ## Changes to this policy

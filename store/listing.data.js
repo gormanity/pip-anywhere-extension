@@ -18,29 +18,22 @@ export default {
     shortDescription:
       "Upgrade picture-in-picture across HTML5 video with smart controls, deep customization, and site restriction unblocking.",
 
-    detailedDescription: `PiP Anywhere gives you faster, more reliable picture-in-picture controls for HTML5 video in Chrome and Edge.
+    detailedDescription: `PiP Anywhere makes picture-in-picture feel like a real browser feature in Chrome and Edge.
 
-Native browser PiP is useful, but the controls can be hidden, inconsistent, or blocked by video sites. PiP Anywhere adds a consistent command layer so you can pop videos out from the keyboard, a toolbar video picker, or an on-video hover button.
+Pop videos out from more places with customizable controls, and unblock PiP on popular streaming sites including Netflix and Disney+. Whether a site's native controls are hidden, inconsistent, or intentionally restricted, PiP Anywhere gives you a consistent set of tools for getting video into a floating window and keeping it there.
 
 FEATURES
 
-• Hover overlay — show a PiP button directly over eligible videos
-• Browser shortcut — toggle PiP from a configurable extension command
-• Toolbar video picker — click the extension icon, highlight page videos, then choose the one to pop out
-• Best-effort unblocking — clears video-level PiP blocks such as disablePictureInPicture when possible
-• Smarter preview handling — suppresses noisy overlays on short videos and YouTube homepage previews
-• Configurable behavior — set hover delay, minimum video length, drag-based overlay placement, hover icon size, hover icon opacity, and idle hiding
-• Site rules — disable the extension on matching hosts or wildcard patterns
-• Settings portability — import and export your options as JSON
-• Useful feedback — shows clear messages when the browser requires page interaction or no eligible video exists
+• Works on popular streaming sites — unblock PiP on sites like Netflix and Disney+
+• Click the video — add a PiP button directly over eligible videos
+• Use the keyboard — trigger PiP with a configurable browser shortcut
+• Pick the right video — use the toolbar picker to highlight page videos and choose the one you want
+• Customize the experience — adjust hover delay, button size, opacity, placement, idle hiding, preview suppression, and minimum video length
+• Control where it runs — disable PiP Anywhere on matching hosts or wildcard patterns
 
 WHY IT EXISTS
 
-Some sites make picture-in-picture harder than it needs to be. PiP Anywhere focuses on native HTML5 video and uses the browser's built-in PiP implementation, while giving you better ways to trigger it.
-
-LIMITATIONS
-
-PiP Anywhere cannot bypass every browser-level restriction. In particular, browser-enforced Permissions Policy, DRM behavior, and user-activation requirements may still prevent PiP on some pages. When that happens, the extension reports the limitation honestly instead of claiming a guaranteed bypass.
+Chrome and Edge ship with limited picture-in-picture controls, and some sites try to stop PiP from working at all. PiP Anywhere improves the browser's native PiP with better triggers, deeper customization, and unblocking for sites that get in the way.
 
 PRIVACY
 
