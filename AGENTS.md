@@ -48,6 +48,8 @@ dist-dev/           # development build output, git-ignored
 - If the current change already has unrelated content, create a new change with
   `jj new` before editing.
 - Describe finished changes with `jj describe -m "message"`.
+- Use commit messages in the form `type: summary`. For breaking changes, use
+  `type!: summary`.
 - Do not push until the feature is complete and checks pass.
 
 ## Commands
