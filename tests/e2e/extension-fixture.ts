@@ -103,6 +103,7 @@ export async function launchExtensionContext(): Promise<{
   let [worker] = context.serviceWorkers();
   worker ??= await context.waitForEvent("serviceworker");
   const extensionId = worker.url().split("/")[2];
+  await closeExtensionPages(context, extensionId);
   return { context, extensionId };
 }
 
@@ -114,6 +115,7 @@ export async function launchProductionExtensionContext(): Promise<{
   const context = await launchContextWithExtensions([extensionPath]);
 
   await expectServiceWorker(context, CHROMIUM_LOCAL_PROD_EXTENSION_ID);
+  await closeExtensionPages(context, CHROMIUM_LOCAL_PROD_EXTENSION_ID);
   return { context, extensionId: CHROMIUM_LOCAL_PROD_EXTENSION_ID };
 }
 
@@ -131,11 +133,27 @@ export async function launchCoexistingExtensionContext(): Promise<{
 
   await expectServiceWorker(context, CHROMIUM_LOCAL_PROD_EXTENSION_ID);
   await expectServiceWorker(context, CHROMIUM_DEV_EXTENSION_ID);
+  await closeExtensionPages(context, CHROMIUM_LOCAL_PROD_EXTENSION_ID);
+  await closeExtensionPages(context, CHROMIUM_DEV_EXTENSION_ID);
   return {
     context,
     prodExtensionId: CHROMIUM_LOCAL_PROD_EXTENSION_ID,
     devExtensionId: CHROMIUM_DEV_EXTENSION_ID,
   };
+}
+
+async function closeExtensionPages(
+  context: BrowserContext,
+  extensionId: string,
+): Promise<void> {
+  await Promise.all(
+    context
+      .pages()
+      .filter((page) =>
+        page.url().startsWith(`chrome-extension://${extensionId}/`),
+      )
+      .map((page) => closePage(page)),
+  );
 }
 
 async function launchContextWithExtensions(
