@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "PiP Anywhere",
   "version": "0.0.0-replaced-at-build-time",
-  "description": "Picture-in-picture controls for HTML5 video.",
+  "description": "Add hover, hotkey, toolbar, and custom PiP controls for HTML5 video, with best-effort site unblocking.",
   "permissions": ["activeTab", "scripting", "storage"],
   "host_permissions": ["<all_urls>"],
   "background": {

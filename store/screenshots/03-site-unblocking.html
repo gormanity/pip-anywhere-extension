@@ -7,33 +7,35 @@
   </head>
   <body>
     <main class="canvas">
-      <section class="browser">
+      <section class="browser browser-large">
         <div class="browser-bar">
           <span class="dot"></span><span class="dot"></span
           ><span class="dot"></span>
-          <span class="address"></span>
+          <span class="address">movie.example/player</span>
         </div>
         <div class="browser-body">
-          <div class="video">
-            <div
-              class="badge"
-              style="position: absolute; left: 28px; top: 28px"
-            >
-              site block cleared
+          <div class="video scene-blocked">
+            <div class="blocked-panel">
+              <span class="lock">!</span>
+              <strong>Video-level PiP disabled</strong>
+              <span
+                >PiP Anywhere clears the block when browser policy allows.</span
+              >
             </div>
+            <div class="badge success floating-badge">block cleared</div>
             <div class="pip-button">
-              <img src="../assets/pip-mark.svg" alt="" />
+              <img src="../../src/assets/icon.svg" alt="" />
             </div>
             <div class="timeline"></div>
           </div>
         </div>
       </section>
       <section class="copy">
-        <p class="eyebrow">Policy override</p>
-        <h1>Works where sites try to block PiP</h1>
+        <p class="eyebrow">Best-effort unblocking</p>
+        <h1>Helps where sites block PiP</h1>
         <p>
-          Sites like Netflix can hide PiP. PiP Anywhere brings it back when the
-          browser allows.
+          Helps on key streaming sites, including Netflix and Disney+, without
+          claiming browser policy can always be bypassed.
         </p>
       </section>
     </main>

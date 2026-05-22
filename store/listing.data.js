@@ -16,24 +16,25 @@ export default {
 
   copy: {
     shortDescription:
-      "Upgrade picture-in-picture across HTML5 video with smart controls, deep customization, and site restriction unblocking.",
+      "Add hover, hotkey, toolbar, and custom PiP controls for HTML5 video, with best-effort site unblocking.",
 
-    detailedDescription: `PiP Anywhere makes picture-in-picture feel like a real browser feature in Chrome and Edge.
+    detailedDescription: `PiP Anywhere gives Chrome and Edge the picture-in-picture controls they leave out and helps restore PiP where sites hide or disable it.
 
-Pop videos out from more places with customizable controls, and unblock PiP on popular streaming sites including Netflix and Disney+. Whether a site's native controls are hidden, inconsistent, or intentionally restricted, PiP Anywhere gives you a consistent set of tools for getting video into a floating window and keeping it there.
+Use it as the one PiP extension for opening and customizing HTML5 video. Trigger native picture-in-picture from a hover button, browser-managed shortcuts, the extension toolbar icon, or highlighted video selection. When sites hide PiP controls or disable video-level PiP, PiP Anywhere also makes a best-effort attempt to clear those blocks when the browser allows, including on popular streaming sites like Netflix and Disney+.
 
 FEATURES
 
-• Works on popular streaming sites — unblock PiP on sites like Netflix and Disney+
-• Click the video — add a PiP button directly over eligible videos
-• Use the keyboard — trigger auto-select PiP or highlighted selection with browser-managed shortcuts
-• Pick the right video — use highlighted selection to choose the exact video you want
-• Customize the experience — adjust hover delay, button size, opacity, placement, idle hiding, preview suppression, and minimum video length
+• Open PiP your way — use the hover button, browser-managed auto-select shortcut, highlighted-selection shortcut, or extension toolbar action
+• Pick the right video — highlight page videos and choose the exact target
+• Tune the controls — adjust hover delay, button size, opacity, placement, idle hiding, preview suppression, and minimum video length
+• Best-effort unblocking — helps when sites hide or disable video-level PiP and browser policy allows
+• Works on key streaming sites — helps on sites like Netflix and Disney+
 • Control where it runs — disable PiP Anywhere on matching hosts or wildcard patterns
+• Stay private — no tracking, no analytics, no accounts, no external servers
 
 WHY IT EXISTS
 
-Chrome and Edge ship with limited picture-in-picture controls, and some sites try to stop PiP from working at all. PiP Anywhere improves the browser's native PiP with better triggers, deeper customization, and unblocking for sites that get in the way.
+Chrome and Edge support native picture-in-picture, but the built-in controls are limited and sites can still get in the way. PiP Anywhere fills that gap with stronger activation paths, practical customization, and honest best-effort unblocking for browser-controlled video restrictions.
 
 PRIVACY
 
@@ -47,7 +48,7 @@ Source code: https://github.com/gormanity/pip-anywhere-extension`,
   },
 
   categories: {
-    chrome: "Productivity",
+    chrome: "Functionality & UI",
     edge: "Productivity",
   },
 
@@ -70,7 +71,7 @@ Source code: https://github.com/gormanity/pip-anywhere-extension`,
 
   chrome: {
     singlePurpose:
-      "Adds keyboard, toolbar, highlighted selection, and hover-overlay controls for triggering native picture-in-picture on HTML5 video pages in Chrome and Edge.",
+      "Adds hover, auto-select shortcut, highlighted selection, toolbar, customization controls, and best-effort video-level PiP unblocking for HTML5 video in Chrome and Edge.",
 
     remoteCodeJustification:
       "This extension does not use remote code. All scripts, styles, and resources are bundled into the extension package at build time via Vite and shipped inside the .zip submitted to the store.",

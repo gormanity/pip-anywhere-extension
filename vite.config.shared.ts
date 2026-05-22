@@ -150,6 +150,14 @@ function copyAssets(browser: string, isDev: boolean): Plugin {
         resolve(import.meta.dirname, "src/injected/pip-unblocker.js"),
         resolve(outDir, "pip-unblocker.js"),
       );
+      copyFileSync(
+        resolve(import.meta.dirname, "src/assets/icon.svg"),
+        resolve(outDir, "icon.svg"),
+      );
+      copyFileSync(
+        resolve(import.meta.dirname, "src/assets/overlay-icon.svg"),
+        resolve(outDir, "overlay-icon.svg"),
+      );
       await generateIcons(browser, outDir);
     },
   };

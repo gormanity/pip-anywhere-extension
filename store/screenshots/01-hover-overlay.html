@@ -3,34 +3,43 @@
   <head>
     <meta charset="utf-8" />
     <link rel="stylesheet" href="../assets/store-style.css" />
-    <title>PiP Anywhere - Open Any Video</title>
+    <title>PiP Anywhere - Better PiP Controls</title>
   </head>
   <body>
     <main class="canvas">
-      <section class="browser">
+      <section class="browser browser-large">
         <div class="browser-bar">
           <span class="dot"></span><span class="dot"></span
           ><span class="dot"></span>
-          <span class="address"></span>
+          <span class="address">stream.example/watch</span>
+          <span class="toolbar-icon"
+            ><img src="../../src/assets/icon.svg" alt=""
+          /></span>
         </div>
         <div class="browser-body">
-          <div class="video">
-            <div class="video-label">hotkey · hover · toolbar</div>
-            <div class="pip-button">
-              <img src="../assets/pip-mark.svg" alt="" />
+          <div class="video scene-streaming">
+            <div class="video-topline">
+              <span class="badge danger">site PiP hidden</span>
+              <span class="badge success">control added</span>
             </div>
-            <div class="play">HTML5 video</div>
+            <div class="poster-art">
+              <span></span><span></span><span></span>
+            </div>
+            <div class="video-title">Evening documentary</div>
+            <div class="pip-button">
+              <img src="../../src/assets/icon.svg" alt="" />
+            </div>
             <div class="timeline"></div>
-            <div class="floating-pip"></div>
+            <div class="floating-pip"><span>Native PiP</span></div>
           </div>
         </div>
       </section>
       <section class="copy">
         <p class="eyebrow">PiP Anywhere</p>
-        <h1>Open any video in PiP</h1>
+        <h1>PiP controls everywhere</h1>
         <p>
-          Use a hotkey, hover button, or extension button to pop out eligible
-          HTML5 video.
+          Open HTML5 videos with a hover button, keyboard shortcut, toolbar
+          action, or best-effort unblocking.
         </p>
       </section>
     </main>

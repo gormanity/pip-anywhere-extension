@@ -11,23 +11,25 @@ logos or trade dress.
 
 ### 01-hover-overlay
 
-Message: "Open any video in PiP"
+Message: "PiP controls everywhere"
 
 Show a browser window with a large HTML5 video and the PiP Anywhere hover button
 visible near the top-right corner of the video. Include a small PiP window and a
-short cue that PiP can also be opened by hotkey or toolbar button.
+short cue that PiP can also be opened by hotkey, toolbar button, or best-effort
+unblocking. Use the full branded icon in store imagery for stronger recognition.
 
 ### 02-keyboard-toolbar
 
-Message: "Hotkey, hover, or toolbar"
+Message: "The missing PiP controls"
 
 Show the same video page with three callouts: keyboard shortcut, extension
 toolbar icon, and overlay button. This should communicate that every trigger
-routes to the same native PiP behavior.
+routes to the same native PiP behavior. Keep the full branded icon in the
+toolbar and store mock overlay.
 
 ### 03-site-unblocking
 
-Message: "Works where sites try to block PiP"
+Message: "Helps where sites block PiP"
 
 Use a generic streaming-player mockup, not a real service brand. Frame the value
 as helping on sites like Netflix that try to block PiP while avoiding claims
@@ -35,11 +37,11 @@ that every browser-enforced policy can be bypassed.
 
 ### 04-options
 
-Message: "Fully customizable"
+Message: "Make PiP behave your way"
 
 Show the options page with hover delay, minimum duration, drag-based placement,
-icon style, site rules, and unblocking visible. The UI should be readable at
-store screenshot size.
+icon style, site rules, and unblocking visible. Include the finalized icon in
+the icon-style control and keep the UI readable at store screenshot size.
 
 ### 05-privacy
 
@@ -57,7 +59,7 @@ Focus on the icon, product name, and a single floating PiP window.
 Suggested copy:
 
 > PiP Anywhere
-> Hotkey, hover, or toolbar PiP.
+> Better PiP controls. Open it your way.
 
 ### Marquee Promo: 1400 x 560
 
@@ -66,5 +68,5 @@ Use a wide video scene with a PiP window floating out of the player.
 Suggested copy:
 
 > PiP Anywhere
-> Open any video in PiP
-> Hotkey, hover button, toolbar click. Private by design.
+> PiP controls everywhere
+> Hover button, hotkeys, toolbar selection, customization, and best-effort unblocking.

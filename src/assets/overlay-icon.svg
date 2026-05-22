@@ -1,0 +1,11 @@
+<svg
+  xmlns="http://www.w3.org/2000/svg"
+  viewBox="0 0 128 128"
+  aria-hidden="true"
+>
+  <g fill="none" stroke="#f8fafc" stroke-linejoin="round">
+    <rect x="14" y="16" width="88" height="82" rx="11" stroke-width="9" />
+    <rect x="56" y="64" width="60" height="46" rx="7" stroke-width="8" />
+  </g>
+  <path d="M78 73v26l23-13Z" fill="#f8fafc" />
+</svg>

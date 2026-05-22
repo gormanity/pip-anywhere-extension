@@ -23,6 +23,7 @@ import {
   RUNTIME_STATE_MESSAGE,
   isContentDuplicateStatusRequestMessage,
 } from "@/core/runtime-messages";
+import overlayIconSvg from "@/assets/overlay-icon.svg?raw";
 
 const OVERLAY_CLASS = "ultimate-pip-overlay";
 const TOAST_CLASS = "ultimate-pip-toast";
@@ -255,12 +256,7 @@ function createOverlay(): HTMLButtonElement {
   button.type = "button";
   button.className = OVERLAY_CLASS;
   button.setAttribute("aria-label", "Open picture-in-picture");
-  button.innerHTML = `
-    <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
-      <rect x="3" y="5" width="18" height="14" rx="2" stroke="currentColor" stroke-width="2"/>
-      <rect x="12" y="11" width="7" height="5" rx="1" fill="currentColor"/>
-    </svg>
-  `;
+  button.innerHTML = overlayIconSvg;
   button.addEventListener(
     "click",
     (event) => {
