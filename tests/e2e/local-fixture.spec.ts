@@ -542,6 +542,12 @@ test("restores default options and persists them", async () => {
 test("shows shortcut text and opens browser shortcut management", async () => {
   await page!.goto(`chrome-extension://${extensionId}/options.html`);
 
+  const manifestVersion = await page!.evaluate(
+    () => chrome.runtime.getManifest().version,
+  );
+  await expect(page!.locator("#version-label")).toHaveText(
+    new RegExp(`^Version ${manifestVersion}-dev, built \\d{4}-\\d{2}-\\d{2}$`),
+  );
   await expect(page!.locator("#shortcut")).not.toHaveValue("");
   await expect(page!.locator("#shortcut")).toHaveAttribute("readonly", "");
 

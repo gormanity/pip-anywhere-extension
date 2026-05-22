@@ -27,6 +27,13 @@ function manifestShortcut(): string {
   return command?.suggested_key?.default ?? "Alt+Shift+P";
 }
 
+function initVersionLabel(): void {
+  const version = api.runtime.getManifest().version;
+  byId<HTMLElement>("version-label").textContent = __DEV__
+    ? `Version ${version}-dev, built ${__BUILD_DATE__}`
+    : `Version ${version}`;
+}
+
 async function updateShortcutText(): Promise<void> {
   const shortcut = byId<HTMLInputElement>("shortcut");
   try {
@@ -432,6 +439,7 @@ async function importSettings(file: File): Promise<void> {
 }
 
 async function init(): Promise<void> {
+  initVersionLabel();
   await updateShortcutText();
   initShortcutButton();
   initStatusHover();

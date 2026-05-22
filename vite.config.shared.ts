@@ -6,6 +6,7 @@ import { build, type InlineConfig, type Plugin } from "vite";
 const pkg = JSON.parse(
   readFileSync(resolve(import.meta.dirname, "package.json"), "utf-8"),
 ) as { version: string };
+const BUILD_DATE = new Date().toISOString().slice(0, 10);
 
 const CHROMIUM_LOCAL_PROD_KEY =
   "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAqWrofqc0az2QIu7LylzTv3ZGyvNv5mP1G0+gn6Q9f/67KtYx+5RltFHs8ef0BThcNwgV3CFf+R9mjRU1iwuiu5UTHxQHXBK5Ft2XaVIzi82OiuQfgGGfIxmQSDkjBPnWaPkR1exB/3MFPrurJgPc61+DggL5iToRdDVYpeDZt3xRJWtn6KEuKOD9HEVahkRi3jttAazx84ygODWMa/MFDuFSsxMMAl1dwo1Lw292OnKnmxQ5jqQ4ih85esa4HW5RgtX7DRBXb7Yjif7n6PkC227X4JJctgYyaIuFxYdVegF5i8rW1sz43NLJpel6d6j4TrsGBPWOylVGHeQOuns60QIDAQAB";
@@ -33,6 +34,14 @@ function bundleCss(filePath: string): string {
       return readFileSync(resolve(dir, importPath), "utf-8");
     },
   );
+}
+
+function buildDefines(browser: string, isDev: boolean): Record<string, string> {
+  return {
+    __BROWSER__: JSON.stringify(browser),
+    __DEV__: JSON.stringify(isDev),
+    __BUILD_DATE__: JSON.stringify(BUILD_DATE),
+  };
 }
 
 async function generateIcons(browser: string, outDir: string): Promise<void> {
@@ -80,10 +89,7 @@ function entryConfig(
       sourcemap: true,
       emptyOutDir: false,
     },
-    define: {
-      __BROWSER__: JSON.stringify(browser),
-      __DEV__: JSON.stringify(isDev),
-    },
+    define: buildDefines(browser, isDev),
     configFile: false,
     logLevel: "warn",
   };
@@ -178,9 +184,6 @@ export function createConfig(browser: string, mode = "production") {
       sourcemap: true,
       emptyOutDir: true,
     },
-    define: {
-      __BROWSER__: JSON.stringify(browser),
-      __DEV__: JSON.stringify(isDev),
-    },
+    define: buildDefines(browser, isDev),
   };
 }

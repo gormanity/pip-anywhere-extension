@@ -102,6 +102,13 @@ h1 {
   line-height: 1;
 }
 
+.version-label {
+  margin-top: 8px;
+  color: var(--muted);
+  font-size: 0.9rem;
+  font-variant-numeric: tabular-nums;
+}
+
 h2 {
   font-size: 0.92rem;
   font-weight: 760;
