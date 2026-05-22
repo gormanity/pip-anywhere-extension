@@ -227,18 +227,51 @@
             <h2 id="controls-heading">Controls</h2>
           </div>
 
+          <label class="setting-row select-row">
+            <span class="setting-copy">
+              <strong>Toolbar icon</strong>
+              <small
+                >Choose what happens when you click the extension icon.</small
+              >
+            </span>
+            <select id="toolbar-action-mode">
+              <option value="auto">Auto-select video</option>
+              <option value="choose">Choose highlighted video</option>
+            </select>
+          </label>
+
           <div class="setting-row shortcut-row">
             <span class="setting-copy">
-              <strong>Keyboard shortcut</strong>
+              <strong>Auto-select shortcut</strong>
               <small
-                >Browser-managed shortcuts are configured in extension
-                settings.</small
+                >Uses the best active or recently played video. Browser-managed
+                shortcuts are configured in extension settings.</small
               >
             </span>
             <div class="shortcut-control">
-              <input id="shortcut" type="text" readonly />
+              <input id="auto-shortcut" type="text" readonly />
               <button
-                id="manage-shortcut"
+                id="manage-auto-shortcut"
+                class="secondary-button"
+                type="button"
+              >
+                Manage
+              </button>
+            </div>
+          </div>
+
+          <div class="setting-row shortcut-row">
+            <span class="setting-copy">
+              <strong>Choose-video shortcut</strong>
+              <small
+                >Highlights eligible videos so you can select the PiP
+                target.</small
+              >
+            </span>
+            <div class="shortcut-control">
+              <input id="choose-shortcut" type="text" readonly />
+              <button
+                id="manage-choose-shortcut"
                 class="secondary-button"
                 type="button"
               >

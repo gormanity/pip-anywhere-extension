@@ -6,14 +6,16 @@ unblocking.
 
 ## Features
 
-- Browser command for toggling PiP on the active tab.
-- Toolbar action that highlights page videos so you can choose the PiP target.
+- Browser commands for auto-selecting the best active video or highlighting
+  videos so you can choose the PiP target.
+- Toolbar action that can use either auto-select or highlighted selection mode.
 - Hover overlay button for HTML5 video elements, with configurable placement,
   size, opacity, delay, idle hiding, and minimum video length.
 - Streaming site PiP unblocking, including Netflix and Disney+.
 - Best-effort clearing of video-level `disablePictureInPicture` blocks.
-- Options page for shortcut management, import/export, per-site disable rules
-  with wildcard support, PiP unblocking, and dev-only debug logging.
+- Options page for toolbar mode, shortcut management, import/export, per-site
+  disable rules with wildcard support, PiP unblocking, and dev-only debug
+  logging.
 
 Browser-enforced site policies may still prevent PiP on some pages. The
 extension removes blocks it can control at the video element level.

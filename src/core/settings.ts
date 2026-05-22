@@ -9,12 +9,14 @@ export interface PipSettings {
   overlayOpacityPercent: number;
   overlaySizePx: number;
   overlayIdleHideMs: number;
+  toolbarActionMode: ToolbarActionMode;
   unblockVideoPiP: boolean;
   disabledSitePatterns: string[];
   debugLogging: boolean;
 }
 
 export const SETTINGS_KEY = "ultimatePip.settings";
+export const TOOLBAR_ACTION_MODES = ["auto", "choose"] as const;
 export const OVERLAY_CORNERS = [
   "top-right",
   "top-left",
@@ -22,6 +24,7 @@ export const OVERLAY_CORNERS = [
   "bottom-left",
 ] as const;
 
+export type ToolbarActionMode = (typeof TOOLBAR_ACTION_MODES)[number];
 export type OverlayCorner = (typeof OVERLAY_CORNERS)[number];
 const DEFAULT_LEGACY_OVERLAY_CORNER: OverlayCorner = "top-right";
 
@@ -40,6 +43,7 @@ export const DEFAULT_SETTINGS: PipSettings = {
   overlayOpacityPercent: 86,
   overlaySizePx: 42,
   overlayIdleHideMs: 2500,
+  toolbarActionMode: "choose",
   unblockVideoPiP: true,
   disabledSitePatterns: [],
   debugLogging: false,
@@ -72,6 +76,7 @@ export function normalizeSettings(input: unknown): PipSettings {
     overlayOpacityPercent: clampOverlayOpacity(candidate.overlayOpacityPercent),
     overlaySizePx: clampOverlaySize(candidate.overlaySizePx),
     overlayIdleHideMs: clampOverlayIdleHide(candidate.overlayIdleHideMs),
+    toolbarActionMode: normalizeToolbarActionMode(candidate.toolbarActionMode),
     unblockVideoPiP:
       typeof candidate.unblockVideoPiP === "boolean"
         ? candidate.unblockVideoPiP
@@ -135,6 +140,12 @@ export function normalizeOverlayCorner(value: unknown): OverlayCorner {
   return OVERLAY_CORNERS.includes(value as OverlayCorner)
     ? (value as OverlayCorner)
     : DEFAULT_LEGACY_OVERLAY_CORNER;
+}
+
+export function normalizeToolbarActionMode(value: unknown): ToolbarActionMode {
+  return TOOLBAR_ACTION_MODES.includes(value as ToolbarActionMode)
+    ? (value as ToolbarActionMode)
+    : DEFAULT_SETTINGS.toolbarActionMode;
 }
 
 export function normalizeOverlayPositionPercent(

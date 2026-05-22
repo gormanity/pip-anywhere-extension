@@ -15,19 +15,20 @@ only extension preferences in your browser's built-in sync storage.
 
 The extension stores these preferences using the browser's `storage.sync` API:
 
-| Key                             | Type    | Description                                           |
-| ------------------------------- | ------- | ----------------------------------------------------- |
-| `hoverOverlayEnabled`           | boolean | Whether the hover overlay button is enabled           |
-| `hoverDelayMs`                  | number  | Delay before showing the hover overlay                |
-| `minimumOverlayDurationSeconds` | number  | Minimum video length for hover overlay eligibility    |
-| `overlayPositionXPercent`       | number  | Horizontal overlay position within the video          |
-| `overlayPositionYPercent`       | number  | Vertical overlay position within the video            |
-| `overlayOpacityPercent`         | number  | Hover overlay opacity                                 |
-| `overlaySizePx`                 | number  | Hover overlay button size                             |
-| `overlayIdleHideMs`             | number  | Idle delay before hiding the hover overlay            |
-| `unblockVideoPiP`               | boolean | Whether to clear video-level PiP blocks when possible |
-| `disabledSitePatterns`          | array   | User-entered site disable hostnames or wildcard rules |
-| `debugLogging`                  | boolean | Development-build-only diagnostic logging preference  |
+| Key                             | Type    | Description                                                |
+| ------------------------------- | ------- | ---------------------------------------------------------- |
+| `hoverOverlayEnabled`           | boolean | Whether the hover overlay button is enabled                |
+| `hoverDelayMs`                  | number  | Delay before showing the hover overlay                     |
+| `minimumOverlayDurationSeconds` | number  | Minimum video length for hover overlay eligibility         |
+| `overlayPositionXPercent`       | number  | Horizontal overlay position within the video               |
+| `overlayPositionYPercent`       | number  | Vertical overlay position within the video                 |
+| `overlayOpacityPercent`         | number  | Hover overlay opacity                                      |
+| `overlaySizePx`                 | number  | Hover overlay button size                                  |
+| `overlayIdleHideMs`             | number  | Idle delay before hiding the hover overlay                 |
+| `toolbarActionMode`             | string  | Whether the toolbar icon auto-selects or highlights videos |
+| `unblockVideoPiP`               | boolean | Whether to clear video-level PiP blocks when possible      |
+| `disabledSitePatterns`          | array   | User-entered site disable hostnames or wildcard rules      |
+| `debugLogging`                  | boolean | Development-build-only diagnostic logging preference       |
 
 These values are stored locally in your browser and may sync through your
 browser account if browser sync is enabled. They are never sent to any server
@@ -50,12 +51,12 @@ operated by this extension.
 
 ## Permissions
 
-| Permission                    | Purpose                                                                            |
-| ----------------------------- | ---------------------------------------------------------------------------------- |
-| `activeTab`                   | Target the active tab when the user invokes the toolbar action or keyboard command |
-| `scripting`                   | Run user-triggered PiP logic in the active tab                                     |
-| `storage`                     | Save extension preferences                                                         |
-| Host permission: `<all_urls>` | Detect HTML5 videos and show the hover overlay wherever users encounter video      |
+| Permission                    | Purpose                                                                          |
+| ----------------------------- | -------------------------------------------------------------------------------- |
+| `activeTab`                   | Target the active tab when the user invokes toolbar actions or keyboard commands |
+| `scripting`                   | Run user-triggered PiP logic in the active tab                                   |
+| `storage`                     | Save extension preferences                                                       |
+| Host permission: `<all_urls>` | Detect HTML5 videos and show the hover overlay wherever users encounter video    |
 
 ---
 

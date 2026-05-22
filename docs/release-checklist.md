@@ -53,6 +53,7 @@ Required Edge smoke targets:
 Confirm these manually because they are browser-managed and not reliable in
 headless automation:
 
-- extension toolbar icon toggles PiP on an eligible video page
-- configured keyboard shortcut toggles PiP on an eligible video page
-- options page shortcut field reflects the assigned browser shortcut
+- extension toolbar icon follows the selected toolbar mode
+- configured auto-select keyboard shortcut toggles PiP on an eligible video page
+- configured choose-video keyboard shortcut highlights eligible videos
+- options page shortcut fields reflect the assigned browser shortcuts

@@ -26,8 +26,8 @@ FEATURES
 
 • Works on popular streaming sites — unblock PiP on sites like Netflix and Disney+
 • Click the video — add a PiP button directly over eligible videos
-• Use the keyboard — trigger PiP with a configurable browser shortcut
-• Pick the right video — use the toolbar picker to highlight page videos and choose the one you want
+• Use the keyboard — trigger auto-select PiP or highlighted selection with browser-managed shortcuts
+• Pick the right video — use highlighted selection to choose the exact video you want
 • Customize the experience — adjust hover delay, button size, opacity, placement, idle hiding, preview suppression, and minimum video length
 • Control where it runs — disable PiP Anywhere on matching hosts or wildcard patterns
 
@@ -43,7 +43,7 @@ OPEN SOURCE
 
 Source code: https://github.com/gormanity/pip-anywhere-extension`,
 
-    versionNotes: `Initial release candidate. Adds keyboard, toolbar video picker, and hover-overlay picture-in-picture controls for HTML5 video, configurable overlay behavior, per-site disabling, settings import/export, and best-effort video-level PiP unblocking.`,
+    versionNotes: `Initial release candidate. Adds keyboard, toolbar, highlighted selection, and hover-overlay picture-in-picture controls for HTML5 video, configurable overlay behavior, per-site disabling, settings import/export, and best-effort video-level PiP unblocking.`,
   },
 
   categories: {
@@ -57,8 +57,8 @@ Source code: https://github.com/gormanity/pip-anywhere-extension`,
     verification: [
       "Load any page with an HTML5 video, such as a normal YouTube watch page, then hover the video to see the PiP overlay button.",
       "Click the hover overlay button to request native picture-in-picture for that video.",
-      "Click the extension toolbar icon on a video page to highlight videos, then click a highlighted video to request PiP.",
-      "Open the options page to adjust hover delay, minimum video length, drag-based overlay placement, hover icon size, hover icon opacity, idle hiding, per-site disable rules, settings import/export, and video-level unblocking.",
+      "Click the extension toolbar icon on a video page to use the configured toolbar mode: auto-select or highlighted selection.",
+      "Open the options page to adjust toolbar mode, browser-managed shortcuts, hover delay, minimum video length, drag-based overlay placement, hover icon size, hover icon opacity, idle hiding, per-site disable rules, settings import/export, and video-level unblocking.",
       "The extension uses `chrome.storage.sync` only for user preferences.",
       "The extension does not use remote code, external services, analytics, tracking, accounts, or network requests.",
       "Browser-level user activation, Permissions Policy, and DRM restrictions may still prevent PiP on some pages.",
@@ -70,7 +70,7 @@ Source code: https://github.com/gormanity/pip-anywhere-extension`,
 
   chrome: {
     singlePurpose:
-      "Adds keyboard, toolbar video picker, and hover-overlay controls for triggering native picture-in-picture on HTML5 video pages in Chrome and Edge.",
+      "Adds keyboard, toolbar, highlighted selection, and hover-overlay controls for triggering native picture-in-picture on HTML5 video pages in Chrome and Edge.",
 
     remoteCodeJustification:
       "This extension does not use remote code. All scripts, styles, and resources are bundled into the extension package at build time via Vite and shipped inside the .zip submitted to the store.",
@@ -79,7 +79,7 @@ Source code: https://github.com/gormanity/pip-anywhere-extension`,
       {
         permission: "`activeTab`",
         justification:
-          "Allows the toolbar video picker and keyboard command to target the currently active tab when the user explicitly invokes PiP.",
+          "Allows toolbar actions and keyboard commands to target the currently active tab when the user explicitly invokes PiP.",
       },
       {
         permission: "`scripting`",
@@ -89,7 +89,7 @@ Source code: https://github.com/gormanity/pip-anywhere-extension`,
       {
         permission: "`storage`",
         justification:
-          "Stores user preferences such as hover delay, overlay placement, hover icon size, hover icon opacity, minimum video length, site disable rules, and PiP unblocking behavior using browser sync storage.",
+          "Stores user preferences such as toolbar mode, hover delay, overlay placement, hover icon size, hover icon opacity, minimum video length, site disable rules, and PiP unblocking behavior using browser sync storage.",
       },
       {
         permission: "Host permission: `<all_urls>`",

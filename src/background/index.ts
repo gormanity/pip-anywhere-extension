@@ -1,13 +1,24 @@
 import { getBrowserApi } from "@/core/browser";
-import { ensureDefaultSettings } from "@/core/settings";
+import {
+  DEFAULT_SETTINGS,
+  ensureDefaultSettings,
+  loadSettings,
+  normalizeSettings,
+  SETTINGS_KEY,
+  type ToolbarActionMode,
+} from "@/core/settings";
 import { installDuplicateRuntime } from "./duplicate-runtime";
 
 const api = getBrowserApi();
+const TOGGLE_COMMAND = "toggle-picture-in-picture";
+const SELECT_COMMAND = "select-picture-in-picture-video";
 const TOGGLE_MESSAGE = { type: "ultimate-pip.toggle" };
 const SELECT_MESSAGE = { type: "ultimate-pip.select-video" };
 const UNSCRIPTABLE_URL_PATTERN =
   /^(about|chrome|chrome-extension|edge|moz-extension):/i;
 const duplicateRuntime = installDuplicateRuntime({ api, isDev: __DEV__ });
+let toolbarActionMode: ToolbarActionMode = DEFAULT_SETTINGS.toolbarActionMode;
+let toolbarActionModeReady: Promise<void> = Promise.resolve();
 
 interface FrameVideoCandidate {
   hasVideo: boolean;
@@ -204,6 +215,23 @@ async function sendSelectToTab(tab?: chrome.tabs.Tab): Promise<void> {
   }
 }
 
+async function refreshToolbarActionMode(): Promise<void> {
+  toolbarActionMode = (await loadSettings()).toolbarActionMode;
+}
+
+function queueToolbarActionModeRefresh(): void {
+  toolbarActionModeReady = refreshToolbarActionMode().catch(() => undefined);
+}
+
+async function runToolbarAction(tab?: chrome.tabs.Tab): Promise<void> {
+  await toolbarActionModeReady;
+  if (toolbarActionMode === "auto") {
+    void sendToggleToTab(tab);
+  } else {
+    void sendSelectToTab(tab);
+  }
+}
+
 function isScriptableTab(tab: chrome.tabs.Tab): tab is chrome.tabs.Tab & {
   id: number;
 } {
@@ -228,6 +256,7 @@ async function injectContentIntoOpenTabs(): Promise<void> {
 
 api.runtime.onInstalled.addListener((details) => {
   void ensureDefaultSettings();
+  queueToolbarActionModeRefresh();
   void injectContentIntoOpenTabs();
   if (details.reason === "install") {
     void api.runtime.openOptionsPage();
@@ -236,14 +265,29 @@ api.runtime.onInstalled.addListener((details) => {
 
 api.runtime.onStartup.addListener(() => {
   void ensureDefaultSettings();
+  queueToolbarActionModeRefresh();
   void injectContentIntoOpenTabs();
 });
 
+api.storage.onChanged.addListener((changes, areaName) => {
+  if (areaName !== "sync" || !changes[SETTINGS_KEY]) return;
+  toolbarActionMode = normalizeSettings(
+    changes[SETTINGS_KEY].newValue,
+  ).toolbarActionMode;
+});
+
 api.commands.onCommand.addListener((command, tab) => {
-  if (command !== "toggle-picture-in-picture") return;
-  void sendToggleToTab(tab);
+  if (command === TOGGLE_COMMAND) {
+    void sendToggleToTab(tab);
+    return;
+  }
+  if (command === SELECT_COMMAND) {
+    void sendSelectToTab(tab);
+  }
 });
 
 api.action.onClicked.addListener((tab) => {
-  void sendSelectToTab(tab);
+  void runToolbarAction(tab);
 });
+
+queueToolbarActionModeRefresh();
