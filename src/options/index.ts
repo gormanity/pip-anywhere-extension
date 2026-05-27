@@ -91,22 +91,15 @@ function initShortcutButton(): void {
   }
 }
 
-function initToolbarModePreview(): void {
-  byId<HTMLSelectElement>("toolbar-action-mode").addEventListener(
-    "change",
-    () => {
-      void updateShortcutText();
-    },
-  );
-}
-
 function readToolbarActionMode(): PipSettings["toolbarActionMode"] {
-  const value = byId<HTMLSelectElement>("toolbar-action-mode").value;
-  return value === "auto" || value === "choose" ? value : "choose";
+  return byId<HTMLInputElement>("toolbar-auto-select-enabled").checked
+    ? "auto"
+    : "choose";
 }
 
 function writeToolbarActionMode(mode: PipSettings["toolbarActionMode"]): void {
-  byId<HTMLSelectElement>("toolbar-action-mode").value = mode;
+  byId<HTMLInputElement>("toolbar-auto-select-enabled").checked =
+    mode === "auto";
 }
 
 function readForm(): PipSettings {
@@ -487,7 +480,6 @@ async function init(): Promise<void> {
   initVersionLabel();
   await updateShortcutText();
   initShortcutButton();
-  initToolbarModePreview();
   initStatusHover();
   initPositionPicker();
   initSiteRules();

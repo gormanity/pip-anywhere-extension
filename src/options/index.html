@@ -227,17 +227,20 @@
             <h2 id="controls-heading">Controls</h2>
           </div>
 
-          <label class="setting-row select-row">
+          <label class="setting-row">
             <span class="setting-copy">
-              <strong>Toolbar icon</strong>
+              <strong>Toolbar auto-select</strong>
               <small
-                >Choose what happens when you click the extension icon.</small
+                >When off, clicking the icon highlights eligible videos so you
+                can choose one.</small
               >
             </span>
-            <select id="toolbar-action-mode">
-              <option value="auto">Auto-select video</option>
-              <option value="choose">Choose highlighted video</option>
-            </select>
+            <input
+              id="toolbar-auto-select-enabled"
+              class="switch"
+              type="checkbox"
+              role="switch"
+            />
           </label>
 
           <div class="setting-row shortcut-row">

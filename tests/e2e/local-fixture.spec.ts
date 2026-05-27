@@ -407,7 +407,7 @@ test("cancels explicit video selection from outside click and escape", async () 
 
 test("autosaves options page changes and shows status text", async () => {
   await page!.goto(`chrome-extension://${extensionId}/options.html`);
-  await page!.locator("#toolbar-action-mode").selectOption("auto");
+  await page!.locator("#toolbar-auto-select-enabled").check();
 
   await expect(page!.locator("#status")).toHaveText("Settings saved.");
   await expect(page!.locator("#status")).toBeInViewport();
@@ -524,7 +524,7 @@ test("restores default options and persists them", async () => {
   await expect(page!.locator("#overlay-opacity")).toHaveValue("86");
   await expect(page!.locator("#overlay-size")).toHaveValue("42");
   await expect(page!.locator("#overlay-idle-hide")).toHaveValue("2500");
-  await expect(page!.locator("#toolbar-action-mode")).toHaveValue("choose");
+  await expect(page!.locator("#toolbar-auto-select-enabled")).not.toBeChecked();
   await expect(page!.locator("#hover-overlay-enabled")).toBeChecked();
   await expect(page!.locator("#unblock-video-pip")).toBeChecked();
 
