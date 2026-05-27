@@ -66,9 +66,6 @@ describe("background duplicate runtime", () => {
     expect(harness.action.setBadgeText).toHaveBeenLastCalledWith({
       text: "OFF",
     });
-    expect(harness.action.setPopup).toHaveBeenLastCalledWith({
-      popup: "popup.html",
-    });
   });
 
   it("prod clears duplicate-disabled after the dev heartbeat becomes stale", async () => {
@@ -90,7 +87,6 @@ describe("background duplicate runtime", () => {
 
     vi.advanceTimersByTime(1);
     expect(harness.action.setBadgeText).toHaveBeenLastCalledWith({ text: "" });
-    expect(harness.action.setPopup).toHaveBeenLastCalledWith({ popup: "" });
   });
 
   it("tracks prod content frame suspension state", async () => {
@@ -133,7 +129,6 @@ function createHarness() {
     setBadgeBackgroundColor: vi.fn(() => Promise.resolve()),
     setBadgeText: vi.fn(() => Promise.resolve()),
     setIcon: vi.fn(() => Promise.resolve()),
-    setPopup: vi.fn(() => Promise.resolve()),
     setTitle: vi.fn(() => Promise.resolve()),
   };
 

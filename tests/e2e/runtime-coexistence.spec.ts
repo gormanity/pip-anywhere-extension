@@ -1,4 +1,4 @@
-import { expect, test, type Page } from "@playwright/test";
+import { expect, test, type BrowserContext, type Page } from "@playwright/test";
 import { DEV_HEARTBEAT_MESSAGE } from "../../src/core/runtime-coordinator";
 import {
   closePage,
@@ -54,19 +54,14 @@ test("local dev wins when prod and dev are installed together", async () => {
   }
 });
 
-test("prod popup shows duplicate-disabled state without a target-site tab", async () => {
+test("prod duplicate state uses badge without an action popup", async () => {
   const launched = await launchCoexistingExtensionContext();
   const context = launched.context;
-  let popup: Page | undefined;
   try {
-    popup = await context.newPage();
-    await popup.goto(
-      `chrome-extension://${launched.prodExtensionId}/popup.html`,
-    );
-
-    await expect(popup.locator("#duplicate-banner")).toBeVisible();
+    await expect
+      .poll(() => readActionState(context, launched.prodExtensionId))
+      .toEqual({ badgeText: "OFF", popup: "" });
   } finally {
-    await closePage(popup);
     await context.close();
   }
 });
@@ -119,4 +114,27 @@ async function expectVideoDuration(
       }),
     )
     .toBeGreaterThanOrEqual(duration);
+}
+
+async function readActionState(
+  context: BrowserContext,
+  extensionId: string,
+): Promise<{ badgeText: string; popup: string }> {
+  const worker = context
+    .serviceWorkers()
+    .find((candidate) =>
+      candidate.url().startsWith(`chrome-extension://${extensionId}/`),
+    );
+  if (!worker) throw new Error(`Missing service worker for ${extensionId}`);
+
+  return await worker.evaluate(
+    () =>
+      new Promise<{ badgeText: string; popup: string }>((resolve) => {
+        chrome.action.getBadgeText({}, (badgeText) => {
+          chrome.action.getPopup({}, (popup) => {
+            resolve({ badgeText, popup });
+          });
+        });
+      }),
+  );
 }

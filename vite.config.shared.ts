@@ -68,7 +68,7 @@ async function generateIcons(browser: string, outDir: string): Promise<void> {
 
 function entryConfig(
   browser: string,
-  entry: "background" | "content" | "options" | "popup",
+  entry: "background" | "content" | "options",
   format: "es" | "iife",
   isDev: boolean,
 ): InlineConfig {
@@ -101,7 +101,6 @@ function buildExtras(browser: string, isDev: boolean): Plugin {
     async closeBundle() {
       await build(entryConfig(browser, "content", "iife", isDev));
       await build(entryConfig(browser, "options", "es", isDev));
-      await build(entryConfig(browser, "popup", "es", isDev));
     },
   };
 }
@@ -143,17 +142,9 @@ function copyAssets(browser: string, isDev: boolean): Plugin {
         resolve(import.meta.dirname, "src/options/index.html"),
         resolve(outDir, "options.html"),
       );
-      copyFileSync(
-        resolve(import.meta.dirname, "src/popup/index.html"),
-        resolve(outDir, "popup.html"),
-      );
       writeFileSync(
         resolve(outDir, "options.css"),
         bundleCss(resolve(import.meta.dirname, "src/options/index.css")),
-      );
-      writeFileSync(
-        resolve(outDir, "popup.css"),
-        bundleCss(resolve(import.meta.dirname, "src/popup/index.css")),
       );
       copyFileSync(
         resolve(import.meta.dirname, "src/injected/pip-unblocker.js"),
