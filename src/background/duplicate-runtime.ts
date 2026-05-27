@@ -35,11 +35,7 @@ const DUPLICATE_DISABLED_TITLE =
 export interface DuplicateRuntimeApi {
   action: Pick<
     typeof chrome.action,
-    | "setBadgeBackgroundColor"
-    | "setBadgeText"
-    | "setIcon"
-    | "setPopup"
-    | "setTitle"
+    "setBadgeBackgroundColor" | "setBadgeText" | "setIcon" | "setTitle"
   >;
   runtime: {
     readonly lastError?: chrome.runtime.LastError;
@@ -126,7 +122,7 @@ export function installDuplicateRuntime({
         },
       );
     } catch {
-      // Popup/options contexts are short-lived.
+      // Options contexts are short-lived.
     }
   }
 
@@ -145,9 +141,6 @@ export function installDuplicateRuntime({
     });
     void api.action.setBadgeBackgroundColor({
       color: disabledByDuplicate ? "#555555" : "#1f6feb",
-    });
-    void api.action.setPopup({
-      popup: disabledByDuplicate || isDev ? "popup.html" : "",
     });
   }
 

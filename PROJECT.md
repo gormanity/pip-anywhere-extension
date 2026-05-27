@@ -37,10 +37,9 @@ Runtime coordination happens in two places:
 - The dev content runtime posts a page-local heartbeat so prod content can
   suspend on already-open video pages.
 
-When prod is duplicate-disabled, the action icon switches to an OFF state, the
-badge reads `OFF`, and `popup.html` reports that production is disabled by the
-dev build. Without dev, prod keeps its normal action behavior and the toolbar
-click starts video selection.
+When prod is duplicate-disabled, the action icon switches to an OFF state and
+the badge reads `OFF`. Without dev, prod keeps its normal action behavior and
+the toolbar click starts video selection.
 
 On prod content suspension, teardown removes extension-owned DOM and runtime
 hooks: document/window listeners, storage/runtime message listeners, mutation
@@ -66,7 +65,7 @@ Remaining risks:
   observed. Prod waits `500ms` on-page before starting to reduce visible
   collisions.
 - If a browser delays extension service worker startup, prod may briefly show
-  as enabled until the dev background heartbeat or popup probe arrives.
+  as enabled until the dev background heartbeat arrives.
 - Page-level Permissions Policy, DRM behavior, and user-activation rules can
   still block native PiP; coexistence only chooses which extension runtime owns
   the attempt.
