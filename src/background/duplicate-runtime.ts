@@ -137,7 +137,7 @@ export function installDuplicateRuntime({
       title: disabledByDuplicate ? DUPLICATE_DISABLED_TITLE : NORMAL_TITLE,
     });
     void api.action.setBadgeText({
-      text: disabledByDuplicate ? "OFF" : isDev ? "DEV" : "",
+      text: disabledByDuplicate ? "OFF" : "",
     });
     void api.action.setBadgeBackgroundColor({
       color: disabledByDuplicate ? "#555555" : "#1f6feb",
