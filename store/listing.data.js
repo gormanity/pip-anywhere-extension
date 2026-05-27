@@ -57,8 +57,8 @@ Source code: https://github.com/gormanity/pip-anywhere-extension`,
     verification: [
       "Load any page with an HTML5 video, such as a normal YouTube watch page, then hover the video to see the PiP overlay button.",
       "Click the hover overlay button to request native picture-in-picture for that video.",
-      "Click the extension toolbar icon on a video page to use the configured toolbar mode: auto-select or highlighted selection.",
-      "Open the options page to adjust toolbar mode, browser-managed shortcuts, hover delay, minimum video length, drag-based overlay placement, hover icon size, hover icon opacity, idle hiding, per-site disable rules, settings import/export, and video-level unblocking.",
+      "Click the extension toolbar icon on a video page to highlight eligible videos; enable toolbar auto-select in options to target the best video instead.",
+      "Open the options page to adjust toolbar auto-select, browser-managed shortcuts, hover delay, minimum video length, drag-based overlay placement, hover icon size, hover icon opacity, idle hiding, per-site disable rules, settings import/export, and video-level unblocking.",
       "The extension uses `chrome.storage.sync` only for user preferences.",
       "The extension does not use remote code, external services, analytics, tracking, accounts, or network requests.",
       "Browser-level user activation, Permissions Policy, and DRM restrictions may still prevent PiP on some pages.",
@@ -89,7 +89,7 @@ Source code: https://github.com/gormanity/pip-anywhere-extension`,
       {
         permission: "`storage`",
         justification:
-          "Stores user preferences such as toolbar mode, hover delay, overlay placement, hover icon size, hover icon opacity, minimum video length, site disable rules, and PiP unblocking behavior using browser sync storage.",
+          "Stores user preferences such as toolbar auto-select behavior, hover delay, overlay placement, hover icon size, hover icon opacity, minimum video length, site disable rules, and PiP unblocking behavior using browser sync storage.",
       },
       {
         permission: "Host permission: `<all_urls>`",

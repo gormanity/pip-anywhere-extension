@@ -7,8 +7,9 @@ release candidate.
 
 1. Run `pnpm run dev:build:chrome`.
 2. Load `dist-dev/chrome` as an unpacked extension in Chrome or Edge.
-3. Open the options page and confirm toolbar mode, shortcut text, hover delay,
-   placement, minimum duration, and unblocking settings render correctly.
+3. Open the options page and confirm toolbar auto-select, shortcut text, hover
+   delay, placement, minimum duration, and unblocking settings render
+   correctly.
 
 ## Local Fixture
 
@@ -18,7 +19,7 @@ Open `fixtures/manual/pip-test.html` and verify:
 - Overlay click attempts PiP and shows useful feedback if the browser blocks it.
 - The blocked-video case has `disablePictureInPicture` cleared.
 - Auto-select shortcut targets the best eligible video.
-- Choose-video shortcut and toolbar choose mode highlight eligible videos.
+- Choose-video shortcut and default toolbar click highlight eligible videos.
 - Same-origin iframe video can be discovered.
 
 ## Real Sites
@@ -26,7 +27,7 @@ Open `fixtures/manual/pip-test.html` and verify:
 Check Chrome before release; include Edge when touching browser-specific
 manifest or background behavior.
 
-- YouTube watch page: overlay appears on the main player, toolbar mode and
+- YouTube watch page: overlay appears on the main player, toolbar click and
   shortcuts work after page interaction.
 - YouTube homepage: thumbnail preview overlays stay suppressed.
 - Netflix: policy override still clears video-level PiP blocking where possible.

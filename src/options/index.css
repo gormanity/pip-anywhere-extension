@@ -254,17 +254,6 @@ input[type="range"] {
   accent-color: var(--primary);
 }
 
-select {
-  width: 100%;
-  min-height: 38px;
-  border: 1px solid var(--line);
-  border-radius: 8px;
-  background: var(--panel-muted);
-  color: var(--text);
-  padding: 0 10px;
-  font: inherit;
-}
-
 output {
   width: 72px;
   flex: 0 0 auto;
@@ -319,17 +308,12 @@ output {
 button:focus-visible,
 input[type="text"]:focus-visible,
 input[type="range"]:focus-visible,
-select:focus-visible,
 textarea:focus-visible {
   outline: 3px solid color-mix(in srgb, var(--primary) 36%, transparent);
   outline-offset: 3px;
 }
 
 .shortcut-row {
-  grid-template-columns: minmax(0, 1fr) minmax(260px, 360px);
-}
-
-.select-row {
   grid-template-columns: minmax(0, 1fr) minmax(260px, 360px);
 }
 
