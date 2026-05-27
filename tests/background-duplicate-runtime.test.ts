@@ -24,6 +24,7 @@ describe("background duplicate runtime", () => {
       extensionId: CHROMIUM_LOCAL_PROD_EXTENSION_ID,
       message: { type: DEV_BUILD_PRESENCE_MESSAGE },
     });
+    expect(harness.action.setBadgeText).toHaveBeenLastCalledWith({ text: "" });
   });
 
   it("prod probes dev before reporting status", async () => {

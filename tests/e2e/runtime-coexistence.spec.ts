@@ -3,6 +3,7 @@ import { DEV_HEARTBEAT_MESSAGE } from "../../src/core/runtime-coordinator";
 import {
   closePage,
   launchCoexistingExtensionContext,
+  launchExtensionContext,
   launchProductionExtensionContext,
   startFixtureServer,
   type FixtureServer,
@@ -61,6 +62,18 @@ test("prod duplicate state uses badge without an action popup", async () => {
     await expect
       .poll(() => readActionState(context, launched.prodExtensionId))
       .toEqual({ badgeText: "OFF", popup: "" });
+  } finally {
+    await context.close();
+  }
+});
+
+test("dev action starts without a badge or popup", async () => {
+  const launched = await launchExtensionContext();
+  const context = launched.context;
+  try {
+    await expect
+      .poll(() => readActionState(context, launched.extensionId))
+      .toEqual({ badgeText: "", popup: "" });
   } finally {
     await context.close();
   }
