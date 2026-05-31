@@ -517,13 +517,13 @@ test("restores default options and persists them", async () => {
   await expect(page!.locator("#status")).toHaveText(
     "Default settings restored.",
   );
-  await expect(page!.locator("#hover-delay-ms")).toHaveValue("250");
+  await expect(page!.locator("#hover-delay-ms")).toHaveValue("0");
   await expect(page!.locator("#minimum-overlay-duration")).toHaveValue("45");
   await expect(page!.locator("#overlay-position-x")).toHaveValue("92");
   await expect(page!.locator("#overlay-position-y")).toHaveValue("12");
   await expect(page!.locator("#overlay-opacity")).toHaveValue("86");
   await expect(page!.locator("#overlay-size")).toHaveValue("42");
-  await expect(page!.locator("#overlay-idle-hide")).toHaveValue("2500");
+  await expect(page!.locator("#overlay-idle-hide")).toHaveValue("3000");
   await expect(page!.locator("#toolbar-auto-select-enabled")).not.toBeChecked();
   await expect(page!.locator("#hover-overlay-enabled")).toBeChecked();
   await expect(page!.locator("#unblock-video-pip")).toBeChecked();
@@ -532,13 +532,13 @@ test("restores default options and persists them", async () => {
     .poll(() => readStoredSettings())
     .toMatchObject({
       hoverOverlayEnabled: true,
-      hoverDelayMs: 250,
+      hoverDelayMs: 0,
       minimumOverlayDurationSeconds: 45,
       overlayPositionXPercent: 92,
       overlayPositionYPercent: 12,
       overlayOpacityPercent: 86,
       overlaySizePx: 42,
-      overlayIdleHideMs: 2500,
+      overlayIdleHideMs: 3000,
       toolbarActionMode: "choose",
       unblockVideoPiP: true,
     });
@@ -628,13 +628,13 @@ async function setSettings(
       key: "ultimatePip.settings",
       settings: {
         hoverOverlayEnabled: true,
-        hoverDelayMs: 250,
+        hoverDelayMs: 0,
         minimumOverlayDurationSeconds: 45,
         overlayPositionXPercent: 92,
         overlayPositionYPercent: 12,
         overlayOpacityPercent: 86,
         overlaySizePx: 42,
-        overlayIdleHideMs: 2500,
+        overlayIdleHideMs: 3000,
         toolbarActionMode: "choose",
         unblockVideoPiP: true,
         disabledSitePatterns: [],

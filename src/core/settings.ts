@@ -36,13 +36,13 @@ type StoredPipSettings = Partial<PipSettings> & {
 
 export const DEFAULT_SETTINGS: PipSettings = {
   hoverOverlayEnabled: true,
-  hoverDelayMs: 250,
+  hoverDelayMs: 0,
   minimumOverlayDurationSeconds: 45,
   overlayPositionXPercent: 92,
   overlayPositionYPercent: 12,
   overlayOpacityPercent: 86,
   overlaySizePx: 42,
-  overlayIdleHideMs: 2500,
+  overlayIdleHideMs: 3000,
   toolbarActionMode: "choose",
   unblockVideoPiP: true,
   disabledSitePatterns: [],
