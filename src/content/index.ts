@@ -176,6 +176,7 @@ function ensureStyle(): void {
       cursor: pointer;
       opacity: 0;
       pointer-events: none;
+      visibility: hidden;
       transition: opacity 120ms ease, transform 120ms ease;
       transform: translateY(4px);
     }
@@ -183,6 +184,7 @@ function ensureStyle(): void {
       opacity: var(--pip-overlay-opacity, 0.86);
       pointer-events: auto;
       transform: translateY(0);
+      visibility: visible;
     }
     .${OVERLAY_CLASS}:hover {
       background: rgba(15, 23, 42, 0.96);
@@ -544,6 +546,7 @@ function isYouTubeThumbnailPreview(video: HTMLVideoElement): boolean {
 
 function showOverlay(video: HTMLVideoElement): void {
   if (!settings.hoverOverlayEnabled || !isVideoEligibleForOverlay(video)) {
+    hideOverlay();
     return;
   }
   overlayVideo = video;
@@ -697,6 +700,11 @@ function clearHoverTimer(): void {
 
 function scheduleOverlay(video: HTMLVideoElement): void {
   if (selectionTargets.length > 0) return;
+  if (!settings.hoverOverlayEnabled || !isVideoEligibleForOverlay(video)) {
+    clearHoverTimer();
+    hideOverlay();
+    return;
+  }
   if (hoverTargetVideo === video && hoverTimer !== null) return;
   clearHoverTimer();
   hoverTargetVideo = video;
