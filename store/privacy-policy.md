@@ -51,12 +51,19 @@ operated by this extension.
 
 ## Permissions
 
-| Permission                    | Purpose                                                                          |
-| ----------------------------- | -------------------------------------------------------------------------------- |
-| `activeTab`                   | Target the active tab when the user invokes toolbar actions or keyboard commands |
-| `scripting`                   | Run user-triggered PiP logic in the active tab                                   |
-| `storage`                     | Save extension preferences                                                       |
-| Host permission: `<all_urls>` | Detect HTML5 videos and show the hover overlay wherever users encounter video    |
+| Permission                    | Purpose                                                                                                                                               |
+| ----------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `activeTab`                   | Target the active tab when the user invokes toolbar actions or keyboard commands                                                                      |
+| `scripting`                   | Run user-triggered PiP logic in the active tab                                                                                                        |
+| `storage`                     | Save extension preferences                                                                                                                            |
+| Host permission: `<all_urls>` | Detect local HTML5 video elements, show the hover overlay wherever users encounter video, and clear video-level PiP blocks when browser policy allows |
+
+PiP Anywhere uses broad host access because HTML5 video can appear on arbitrary
+websites and embedded frames, and the hover overlay is designed to be available
+when the user encounters a video rather than only after clicking the extension
+toolbar icon. The content script inspects local `video` elements and related
+browser media properties needed for PiP controls. It does not collect page text,
+video content, browsing history, form data, cookies, or account information.
 
 ---
 

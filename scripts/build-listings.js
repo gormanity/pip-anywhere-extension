@@ -141,6 +141,16 @@ function renderEdge(l) {
     (count, term) => count + term.split(/\s+/).length,
     0,
   );
+  const justifications = l.chrome.permissionJustifications
+    .map(
+      (permission) =>
+        `**${permission.permission} justification**
+
+${fence(permission.justification)}
+
+_(${permission.justification.length} chars)_`,
+    )
+    .join("\n\n");
 
   const certificationNotes = [
     l.reviewerNotes.intro,
@@ -178,17 +188,27 @@ ${l.meta.supportUrl}
 
 ## Store Listing
 
-### 1. Description
+### 1. Single purpose description (1,000 char max)
+
+${fence(l.edge.singlePurpose)}
+
+_(${l.edge.singlePurpose.length} chars)_
+
+### 2. Description
 
 ${fence(l.copy.detailedDescription)}
 
 _(${l.copy.detailedDescription.length} chars)_
 
-### 2. YouTube video URL
+### 3. Permission justifications (1,000 char max each)
+
+${justifications}
+
+### 4. YouTube video URL
 
 _(not set — optional)_
 
-### 3. Search terms
+### 5. Search terms
 
 <!-- Edge: max 7 terms · 30 chars per term · 21 words total -->
 

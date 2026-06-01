@@ -53,7 +53,7 @@ Source code: https://github.com/gormanity/pip-anywhere-extension`,
   },
 
   reviewerNotes: {
-    intro: `PiP Anywhere runs on pages with HTML5 video and provides user-triggered native picture-in-picture controls through the extension command, toolbar action, and injected hover overlay.`,
+    intro: `PiP Anywhere runs on pages with HTML5 video and provides native picture-in-picture controls through the extension command, toolbar action, and injected hover overlay. Broad host access is required for the always-available hover overlay and video-level PiP unblocking; activeTab alone would limit the extension to pages after a toolbar or shortcut gesture and would remove the core hover-button behavior.`,
 
     verification: [
       "Load any page with an HTML5 video, such as a normal YouTube watch page, then hover the video to see the PiP overlay button.",
@@ -62,6 +62,7 @@ Source code: https://github.com/gormanity/pip-anywhere-extension`,
       "Open the options page to adjust toolbar auto-select, browser-managed shortcuts, hover delay, minimum video length, drag-based overlay placement, hover icon size, hover icon opacity, idle hiding, per-site disable rules, settings import/export, and video-level unblocking.",
       "The extension uses `chrome.storage.sync` only for user preferences.",
       "The extension does not use remote code, external services, analytics, tracking, accounts, or network requests.",
+      "The content script only detects and modifies local HTML5 video elements needed for PiP controls; it does not collect page text, video content, browsing history, form data, cookies, or account information.",
       "Browser-level user activation, Permissions Policy, and DRM restrictions may still prevent PiP on some pages.",
     ],
 
@@ -95,12 +96,15 @@ Source code: https://github.com/gormanity/pip-anywhere-extension`,
       {
         permission: "Host permission: `<all_urls>`",
         justification:
-          "The extension must detect HTML5 video elements and show the hover overlay on pages where videos appear. Broad host access is needed because users may want PiP on video embedded across arbitrary websites. The extension does not collect, transmit, or store page content.",
+          "Required for the core hover overlay and video-level PiP unblocking. HTML5 video can appear on arbitrary sites and in same-origin iframes, so the content script must run where users encounter video before they click the toolbar icon. `activeTab` is already used for explicit toolbar/shortcut actions, but activeTab-only access would remove the always-available hover button. The extension only inspects local video elements and does not collect, transmit, or store page content.",
       },
     ],
   },
 
   edge: {
+    singlePurpose:
+      "Adds hover, keyboard shortcut, toolbar, and customization controls for opening HTML5 videos in native picture-in-picture, with best-effort video-level PiP unblocking.",
+
     // Edge Add-ons constraints: max 7 terms, 30 chars per term, 21 words total.
     searchTerms: [
       "picture in picture",
