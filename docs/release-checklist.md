@@ -41,11 +41,13 @@ Required Edge smoke targets:
 
 ## Store Submission
 
-1. Generate listing copy with `pnpm run build:listings`.
+1. Generate listing copy and upload-ready store icons with
+   `pnpm run build:listings`.
 2. Use `dist/store/chrome.md` for Chrome Web Store fields.
 3. Use `dist/store/edge.md` for Microsoft Edge Add-ons fields.
-4. Use `store/privacy-policy.md` as the public privacy policy.
-5. Upload screenshots and promo images from `store/screenshots/` and
+4. Upload the store icon PNGs from `dist/store/icons/`.
+5. Use `store/privacy-policy.md` as the public privacy policy.
+6. Upload screenshots and promo images from `store/screenshots/` and
    `store/promo/` once final assets are generated.
 
 ## Manual Browser-Managed Controls
