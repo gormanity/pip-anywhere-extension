@@ -1,5 +1,13 @@
-import { expect, test, type BrowserContext, type Page } from "@playwright/test";
+import {
+  expect,
+  test,
+  type BrowserContext,
+  type Page,
+  type Worker,
+} from "@playwright/test";
+import { SELECT_COMMAND } from "../../src/background/browser-commands";
 import { DEV_HEARTBEAT_MESSAGE } from "../../src/core/runtime-coordinator";
+import { FORWARD_COMMAND_MESSAGE } from "../../src/core/runtime-messages";
 import {
   closePage,
   launchCoexistingExtensionContext,
@@ -63,6 +71,41 @@ test("prod duplicate state uses badge without an action popup", async () => {
       .poll(() => readActionState(context, launched.prodExtensionId))
       .toEqual({ badgeText: "OFF", popup: "" });
   } finally {
+    await context.close();
+  }
+});
+
+test("local prod forwards browser commands to local dev", async () => {
+  const launched = await launchCoexistingExtensionContext();
+  const context = launched.context;
+  let page: Page | undefined;
+  try {
+    page = await context.newPage();
+    await page.goto(`${server.origin}/pip-fixture.html`);
+    await expectVideoDuration(page, "#eligible-video", 45);
+
+    await expect
+      .poll(() => readActionState(context, launched.prodExtensionId))
+      .toEqual({ badgeText: "OFF", popup: "" });
+
+    await page.bringToFront();
+    await expect(
+      sendForwardedCommandFromProd(
+        context,
+        launched.prodExtensionId,
+        launched.devExtensionId,
+        SELECT_COMMAND,
+      ),
+    ).resolves.toEqual({
+      lastError: null,
+      response: { ok: true },
+    });
+
+    await expect(
+      page.locator(".ultimate-pip-video-target").first(),
+    ).toBeVisible();
+  } finally {
+    await closePage(page);
     await context.close();
   }
 });
@@ -150,4 +193,52 @@ async function readActionState(
         });
       }),
   );
+}
+
+async function sendForwardedCommandFromProd(
+  context: BrowserContext,
+  prodExtensionId: string,
+  devExtensionId: string,
+  command: string,
+): Promise<{ lastError: string | null; response: unknown }> {
+  const worker = await extensionServiceWorker(context, prodExtensionId);
+  return await worker.evaluate(
+    ({ devExtensionId, messageType, command }) =>
+      new Promise<{ lastError: string | null; response: unknown }>(
+        (resolve) => {
+          chrome.runtime.sendMessage(
+            devExtensionId,
+            { type: messageType, command },
+            (response: unknown) => {
+              resolve({
+                lastError: chrome.runtime.lastError?.message ?? null,
+                response,
+              });
+            },
+          );
+        },
+      ),
+    {
+      devExtensionId,
+      messageType: FORWARD_COMMAND_MESSAGE,
+      command,
+    },
+  );
+}
+
+async function extensionServiceWorker(
+  context: BrowserContext,
+  extensionId: string,
+): Promise<Worker> {
+  const existing = context
+    .serviceWorkers()
+    .find((worker) =>
+      worker.url().startsWith(`chrome-extension://${extensionId}/`),
+    );
+  if (existing) return existing;
+
+  return await context.waitForEvent("serviceworker", {
+    predicate: (worker) =>
+      worker.url().startsWith(`chrome-extension://${extensionId}/`),
+  });
 }

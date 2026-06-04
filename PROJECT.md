@@ -34,12 +34,21 @@ Runtime coordination happens in two places:
 
 - The dev background announces presence to the known local prod ID with
   `chrome.runtime.sendMessage`.
+- The prod background probes the dev ID before command routing. If prod is
+  duplicate-disabled, it forwards browser commands to dev and does not run the
+  action locally.
+- The dev background accepts forwarded browser commands only from known prod IDs
+  and dispatches the same internal command path used by its own browser command
+  listener.
 - The dev content runtime posts a page-local heartbeat so prod content can
   suspend on already-open video pages.
 
 When prod is duplicate-disabled, the action icon switches to an OFF state and
 the badge reads `OFF`. Without dev, prod keeps its normal action behavior and
 the toolbar click starts video selection.
+
+Chromium dev manifests keep the command declarations but remove every
+`suggested_key`, so Chrome sync keeps the normal shortcuts assigned to prod.
 
 On prod content suspension, teardown removes extension-owned DOM and runtime
 hooks: document/window listeners, storage/runtime message listeners, mutation
@@ -50,14 +59,28 @@ PiP unblocker bridge.
 Local test flow:
 
 ```bash
-pnpm run dev:build:chrome
 pnpm run build:chrome
+pnpm run dev:build:chrome
 ```
 
 Then load both folders from `chrome://extensions`:
 
 1. `dist/chrome` for local prod.
 2. `dist-dev/chrome` for local dev.
+3. Open `chrome://extensions/shortcuts`.
+4. Assign the normal PiP shortcuts to local prod.
+5. Leave local dev shortcuts unset.
+6. Open `fixtures/manual/pip-test.html` in a normal tab.
+7. Confirm local prod shows the `OFF` badge while local dev is active.
+8. Press the prod-owned shortcut. Dev should run the PiP command; prod should
+   not run it locally while `OFF`.
+
+To verify dev handled the forwarded command, inspect the local dev service
+worker from `chrome://extensions` and check for:
+
+```text
+Hotkey: received forwarded command
+```
 
 Remaining risks:
 

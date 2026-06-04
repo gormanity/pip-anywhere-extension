@@ -7,10 +7,12 @@ import {
   DEV_BUILD_PRESENCE_REQUEST_MESSAGE,
   DEV_BUILD_STALE_MS,
   DUPLICATE_STATUS_CHANGED_MESSAGE,
+  FORWARD_COMMAND_MESSAGE,
   type DuplicateStatusResponse,
   isDevBuildPresenceMessage,
   isDevBuildPresenceRequestMessage,
   isDuplicateStatusRequestMessage,
+  isForwardCommandMessage,
   isRuntimeStateMessage,
 } from "@/core/runtime-messages";
 
@@ -74,16 +76,40 @@ interface ListenerTarget<T> {
 
 export interface DuplicateRuntimeController {
   isDuplicateDisabled(): boolean;
-  probeDevBuildPresence(callback?: () => void): void;
+  probeDevBuildPresence(callback?: () => void): Promise<void>;
   startDevBuildHeartbeat(): void;
+}
+
+type ForwardedCommandHandler = (command: string) => boolean | Promise<boolean>;
+
+export function forwardCommandToDevBuild(
+  runtime: Pick<DuplicateRuntimeApi["runtime"], "lastError" | "sendMessage">,
+  command: string,
+): Promise<boolean> {
+  return new Promise((resolve) => {
+    try {
+      runtime.sendMessage(
+        CHROMIUM_DEV_EXTENSION_ID,
+        { type: FORWARD_COMMAND_MESSAGE, command },
+        (response?: unknown) => {
+          const forwardedResponse = response as { ok?: boolean } | undefined;
+          resolve(!runtime.lastError && forwardedResponse?.ok === true);
+        },
+      );
+    } catch {
+      resolve(false);
+    }
+  });
 }
 
 export function installDuplicateRuntime({
   api,
   isDev,
+  onForwardedCommand,
 }: {
   api: DuplicateRuntimeApi;
   isDev: boolean;
+  onForwardedCommand?: ForwardedCommandHandler;
 }): DuplicateRuntimeController {
   const suspendedFramesByTab = new Map<number, Set<number>>();
   let currentActionState: boolean | null = null;
@@ -188,22 +214,33 @@ export function installDuplicateRuntime({
     devHeartbeatTimer = setInterval(pingProd, DEV_BUILD_PING_INTERVAL_MS);
   }
 
-  function probeDevBuildPresence(callback?: () => void): void {
+  function probeDevBuildPresence(callback?: () => void): Promise<void> {
     if (isDev) {
       callback?.();
-      return;
+      return Promise.resolve();
     }
 
-    api.runtime.sendMessage(
-      CHROMIUM_DEV_EXTENSION_ID,
-      { type: DEV_BUILD_PRESENCE_REQUEST_MESSAGE },
-      (response?: { ok?: boolean }) => {
-        if (!api.runtime.lastError && response?.ok === true) {
-          markExternalDevBuildPresent();
-        }
-        setTimeout(() => callback?.(), 0);
-      },
-    );
+    return new Promise((resolve) => {
+      const finish = (): void => {
+        callback?.();
+        resolve();
+      };
+
+      try {
+        api.runtime.sendMessage(
+          CHROMIUM_DEV_EXTENSION_ID,
+          { type: DEV_BUILD_PRESENCE_REQUEST_MESSAGE },
+          (response?: { ok?: boolean }) => {
+            if (!api.runtime.lastError && response?.ok === true) {
+              markExternalDevBuildPresent();
+            }
+            setTimeout(finish, 0);
+          },
+        );
+      } catch {
+        setTimeout(finish, 0);
+      }
+    });
   }
 
   function sendDuplicateStatusResponse(
@@ -275,8 +312,42 @@ export function installDuplicateRuntime({
       ) {
         return false;
       }
-      if (!isDevBuildPresenceRequestMessage(message)) return false;
-      sendResponse({ ok: true });
+
+      if (isDevBuildPresenceRequestMessage(message)) {
+        sendResponse({ ok: true });
+        return false;
+      }
+
+      if (isForwardCommandMessage(message)) {
+        if (!onForwardedCommand) {
+          sendResponse({ ok: false });
+          return false;
+        }
+
+        let result: boolean | Promise<boolean>;
+        try {
+          result = onForwardedCommand(message.command);
+        } catch {
+          sendResponse({ ok: false });
+          return false;
+        }
+
+        if (isPromiseLike(result)) {
+          result.then(
+            (ok) => {
+              sendResponse({ ok });
+            },
+            () => {
+              sendResponse({ ok: false });
+            },
+          );
+          return true;
+        }
+
+        sendResponse({ ok: result });
+        return false;
+      }
+
       return false;
     }
 
@@ -311,4 +382,13 @@ export function installDuplicateRuntime({
     probeDevBuildPresence,
     startDevBuildHeartbeat,
   };
+}
+
+function isPromiseLike<T>(value: unknown): value is PromiseLike<T> {
+  return (
+    typeof value === "object" &&
+    value !== null &&
+    "then" in value &&
+    typeof (value as { then?: unknown }).then === "function"
+  );
 }

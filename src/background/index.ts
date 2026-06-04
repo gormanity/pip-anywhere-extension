@@ -1,5 +1,11 @@
 import { getBrowserApi } from "@/core/browser";
 import {
+  SELECT_COMMAND,
+  TOGGLE_COMMAND,
+  routeBrowserCommand,
+  type BrowserCommandName,
+} from "./browser-commands";
+import {
   DEFAULT_SETTINGS,
   ensureDefaultSettings,
   loadSettings,
@@ -7,16 +13,21 @@ import {
   SETTINGS_KEY,
   type ToolbarActionMode,
 } from "@/core/settings";
-import { installDuplicateRuntime } from "./duplicate-runtime";
+import {
+  forwardCommandToDevBuild,
+  installDuplicateRuntime,
+} from "./duplicate-runtime";
 
 const api = getBrowserApi();
-const TOGGLE_COMMAND = "toggle-picture-in-picture";
-const SELECT_COMMAND = "select-picture-in-picture-video";
 const TOGGLE_MESSAGE = { type: "ultimate-pip.toggle" };
 const SELECT_MESSAGE = { type: "ultimate-pip.select-video" };
 const UNSCRIPTABLE_URL_PATTERN =
   /^(about|chrome|chrome-extension|edge|moz-extension):/i;
-const duplicateRuntime = installDuplicateRuntime({ api, isDev: __DEV__ });
+const duplicateRuntime = installDuplicateRuntime({
+  api,
+  isDev: __DEV__,
+  onForwardedCommand: handleForwardedBrowserCommand,
+});
 let toolbarActionMode: ToolbarActionMode = DEFAULT_SETTINGS.toolbarActionMode;
 let toolbarActionModeReady: Promise<void> = Promise.resolve();
 
@@ -215,6 +226,44 @@ async function sendSelectToTab(tab?: chrome.tabs.Tab): Promise<void> {
   }
 }
 
+async function dispatchBrowserCommand(
+  command: BrowserCommandName,
+  tab?: chrome.tabs.Tab,
+): Promise<void> {
+  if (command === TOGGLE_COMMAND) {
+    await sendToggleToTab(tab);
+    return;
+  }
+  if (command === SELECT_COMMAND) {
+    await sendSelectToTab(tab);
+  }
+}
+
+async function handleBrowserCommand(
+  command: string,
+  tab?: chrome.tabs.Tab,
+): Promise<boolean> {
+  return routeBrowserCommand({
+    command,
+    tab,
+    isDev: __DEV__,
+    duplicateRuntime,
+    forwardCommand: (forwardedCommand) =>
+      forwardCommandToDevBuild(api.runtime, forwardedCommand),
+    dispatchCommand: dispatchBrowserCommand,
+  });
+}
+
+async function handleForwardedBrowserCommand(
+  command: string,
+): Promise<boolean> {
+  const handled = await handleBrowserCommand(command);
+  if (handled && __DEV__) {
+    console.debug("Hotkey: received forwarded command", command);
+  }
+  return handled;
+}
+
 async function refreshToolbarActionMode(): Promise<void> {
   toolbarActionMode = (await loadSettings()).toolbarActionMode;
 }
@@ -277,13 +326,7 @@ api.storage.onChanged.addListener((changes, areaName) => {
 });
 
 api.commands.onCommand.addListener((command, tab) => {
-  if (command === TOGGLE_COMMAND) {
-    void sendToggleToTab(tab);
-    return;
-  }
-  if (command === SELECT_COMMAND) {
-    void sendSelectToTab(tab);
-  }
+  void handleBrowserCommand(command, tab);
 });
 
 api.action.onClicked.addListener((tab) => {

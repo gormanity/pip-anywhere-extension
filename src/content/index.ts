@@ -101,6 +101,21 @@ function log(...args: unknown[]): void {
   }
 }
 
+function getExtensionUrl(path: string): string | null {
+  try {
+    const runtime = (api as { runtime?: Partial<typeof chrome.runtime> })
+      .runtime;
+    if (typeof runtime?.getURL !== "function") return null;
+    return runtime.getURL(path);
+  } catch {
+    return null;
+  }
+}
+
+function isExtensionContextAvailable(): boolean {
+  return getExtensionUrl("") !== null;
+}
+
 function recordDiagnostic(
   event: string,
   details: Record<string, unknown> | unknown = {},
@@ -859,6 +874,11 @@ function observeVideos(root: ParentNode = document): void {
 }
 
 function dispatchUnblockerConfig(): void {
+  if (!isExtensionContextAvailable()) {
+    stopContentRuntime();
+    return;
+  }
+
   window.dispatchEvent(
     new CustomEvent(CONFIG_EVENT, {
       detail: {
@@ -875,11 +895,18 @@ function injectPageUnblocker(): void {
     return;
   }
 
+  const scriptUrl = getExtensionUrl("pip-unblocker.js");
+  if (!scriptUrl) {
+    pageUnblockerInjected = false;
+    recordDiagnostic("page-unblocker-extension-context-unavailable");
+    return;
+  }
+
   pageUnblockerInjected = true;
   recordDiagnostic("page-unblocker-injecting");
   const script = document.createElement("script");
   script.id = INJECTED_SCRIPT_ID;
-  script.src = `${api.runtime.getURL("pip-unblocker.js")}?runtime=${RUNTIME_KIND}`;
+  script.src = `${scriptUrl}?runtime=${RUNTIME_KIND}`;
   script.onload = () => {
     script.remove();
     if (!runtimeStarted) return;
@@ -945,6 +972,10 @@ async function startContentRuntime(): Promise<void> {
     settings = { ...DEFAULT_SETTINGS };
   }
   if (!runtimeStarted || generation !== runtimeGeneration) return;
+  if (!isExtensionContextAvailable()) {
+    stopContentRuntime();
+    return;
+  }
   pruneStaleUiElements();
 
   if (settings.unblockVideoPiP && !isCurrentSiteDisabled())
@@ -1016,7 +1047,13 @@ async function startContentRuntime(): Promise<void> {
       observeVideos();
     }
   };
-  api.storage.onChanged.addListener(storageChangeListener);
+  try {
+    api.storage.onChanged.addListener(storageChangeListener);
+  } catch {
+    storageChangeListener = null;
+    stopContentRuntime();
+    return;
+  }
 
   runtimeMessageListener = (message, _sender, sendResponse) => {
     if (message?.type === "ultimate-pip.select-video") {
@@ -1032,7 +1069,12 @@ async function startContentRuntime(): Promise<void> {
     void triggerPiP(findBestVideo()).then(sendResponse);
     return true;
   };
-  api.runtime.onMessage.addListener(runtimeMessageListener);
+  try {
+    api.runtime.onMessage.addListener(runtimeMessageListener);
+  } catch {
+    runtimeMessageListener = null;
+    stopContentRuntime();
+  }
 }
 
 function stopContentRuntime(): void {
@@ -1059,11 +1101,19 @@ function stopContentRuntime(): void {
   mutationObserver = null;
 
   if (storageChangeListener) {
-    api.storage.onChanged.removeListener(storageChangeListener);
+    try {
+      api.storage.onChanged.removeListener(storageChangeListener);
+    } catch {
+      // Stale content scripts can outlive their extension context on reload.
+    }
     storageChangeListener = null;
   }
   if (runtimeMessageListener) {
-    api.runtime.onMessage.removeListener(runtimeMessageListener);
+    try {
+      api.runtime.onMessage.removeListener(runtimeMessageListener);
+    } catch {
+      // Stale content scripts can outlive their extension context on reload.
+    }
     runtimeMessageListener = null;
   }
 

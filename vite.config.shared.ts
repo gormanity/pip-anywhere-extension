@@ -2,18 +2,12 @@ import { copyFileSync, mkdirSync, readFileSync, writeFileSync } from "fs";
 import { dirname, resolve } from "path";
 import sharp from "sharp";
 import { build, type InlineConfig, type Plugin } from "vite";
+import { applyChromiumCoexistenceManifestFields } from "./src/core/manifest-coexistence";
 
 const pkg = JSON.parse(
   readFileSync(resolve(import.meta.dirname, "package.json"), "utf-8"),
 ) as { version: string };
 const BUILD_DATE = new Date().toISOString().slice(0, 10);
-
-const CHROMIUM_LOCAL_PROD_KEY =
-  "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAqWrofqc0az2QIu7LylzTv3ZGyvNv5mP1G0+gn6Q9f/67KtYx+5RltFHs8ef0BThcNwgV3CFf+R9mjRU1iwuiu5UTHxQHXBK5Ft2XaVIzi82OiuQfgGGfIxmQSDkjBPnWaPkR1exB/3MFPrurJgPc61+DggL5iToRdDVYpeDZt3xRJWtn6KEuKOD9HEVahkRi3jttAazx84ygODWMa/MFDuFSsxMMAl1dwo1Lw292OnKnmxQ5jqQ4ih85esa4HW5RgtX7DRBXb7Yjif7n6PkC227X4JJctgYyaIuFxYdVegF5i8rW1sz43NLJpel6d6j4TrsGBPWOylVGHeQOuns60QIDAQAB";
-const CHROMIUM_DEV_KEY =
-  "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEArQIV9aaSSmjULoCx5FoGrUgnGBSAGSD79jEjLk19FyCwPbEOH9zeK4DUEJCDzw+ZrjbuSv25lRBADdNvvpndrAWGtsmH8MIdo1mQr3QXjUJOhCwvNZBb5jSf+itIV/t4/GASMr2aALDsfFSFicfoD2Cnkm3soIJi4Yhda+2Cn3J81M/gLcwycUSxxgG33Ukfd2BRsEc/01qud+vpAOXjTeyBHN/pZ4xnm2E3W42nYLUb0QQZ+to3pHUv3e/Qli0CpgnIABW7GKJo+kRkHy871KJoXQDM/m8G/9npy/Y56Q79nQpvuhpWjsA85ppUE/ic04pO4vawVNJhswhvbhe/9wIDAQAB";
-const CHROMIUM_LOCAL_PROD_EXTENSION_ID = "dakagfnbbijbflodaajdfgdiddgobjhl";
-const CHROMIUM_DEV_EXTENSION_ID = "cjodjanjoahbgiigloplfkiikoejgoge";
 
 const ICON_SIZES: Partial<Record<string, number[]>> = {
   chrome: [16, 32, 48, 128],
@@ -117,7 +111,7 @@ function copyAssets(browser: string, isDev: boolean): Plugin {
           resolve(import.meta.dirname, `src/manifests/${browser}.json`),
           "utf-8",
         ),
-      ) as {
+      ) as Record<string, unknown> & {
         version: string;
         name: string;
         key?: string;
@@ -125,14 +119,7 @@ function copyAssets(browser: string, isDev: boolean): Plugin {
       };
       manifest.version = pkg.version;
       if (isDev) manifest.name += " (dev)";
-      if (browser === "chrome" || browser === "edge") {
-        manifest.key = isDev ? CHROMIUM_DEV_KEY : CHROMIUM_LOCAL_PROD_KEY;
-        manifest.externally_connectable = {
-          ids: isDev
-            ? [CHROMIUM_LOCAL_PROD_EXTENSION_ID]
-            : [CHROMIUM_DEV_EXTENSION_ID],
-        };
-      }
+      applyChromiumCoexistenceManifestFields(manifest, browser, isDev);
       writeFileSync(
         resolve(outDir, "manifest.json"),
         JSON.stringify(manifest, null, 2) + "\n",

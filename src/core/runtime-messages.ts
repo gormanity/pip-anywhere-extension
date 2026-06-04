@@ -8,6 +8,7 @@ export const CONTENT_DUPLICATE_STATUS_REQUEST_MESSAGE =
 export const DEV_BUILD_PRESENCE_MESSAGE = "pip-anywhere.dev-build-presence";
 export const DEV_BUILD_PRESENCE_REQUEST_MESSAGE =
   "pip-anywhere.get-dev-build-presence";
+export const FORWARD_COMMAND_MESSAGE = "pip-anywhere.forward-command";
 
 export const DEV_BUILD_PING_INTERVAL_MS = 1000;
 export const DEV_BUILD_STALE_MS = 3500;
@@ -42,6 +43,11 @@ export type DevBuildPresenceMessage = {
 
 export type DevBuildPresenceRequestMessage = {
   type: typeof DEV_BUILD_PRESENCE_REQUEST_MESSAGE;
+};
+
+export type ForwardCommandMessage = {
+  type: typeof FORWARD_COMMAND_MESSAGE;
+  command: string;
 };
 
 export type DuplicateStatusResponse = {
@@ -104,5 +110,17 @@ export function isDevBuildPresenceRequestMessage(
     message !== null &&
     (message as Partial<DevBuildPresenceRequestMessage>).type ===
       DEV_BUILD_PRESENCE_REQUEST_MESSAGE
+  );
+}
+
+export function isForwardCommandMessage(
+  message: unknown,
+): message is ForwardCommandMessage {
+  return (
+    typeof message === "object" &&
+    message !== null &&
+    (message as Partial<ForwardCommandMessage>).type ===
+      FORWARD_COMMAND_MESSAGE &&
+    typeof (message as Partial<ForwardCommandMessage>).command === "string"
   );
 }

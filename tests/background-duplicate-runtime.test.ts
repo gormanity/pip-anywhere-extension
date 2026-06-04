@@ -1,11 +1,15 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { installDuplicateRuntime } from "@/background/duplicate-runtime";
+import {
+  forwardCommandToDevBuild,
+  installDuplicateRuntime,
+} from "@/background/duplicate-runtime";
 import {
   CHROMIUM_DEV_EXTENSION_ID,
   CHROMIUM_LOCAL_PROD_EXTENSION_ID,
   DEV_BUILD_PRESENCE_MESSAGE,
   DEV_BUILD_PRESENCE_REQUEST_MESSAGE,
   DUPLICATE_STATUS_REQUEST_MESSAGE,
+  FORWARD_COMMAND_MESSAGE,
   RUNTIME_STATE_MESSAGE,
 } from "@/core/runtime-messages";
 
@@ -104,6 +108,94 @@ describe("background duplicate runtime", () => {
       data: { duplicateDetected: true },
     });
   });
+
+  it("prod rejects external messages from unknown IDs", () => {
+    installDuplicateRuntime({ api: harness.api, isDev: false });
+
+    expect(
+      harness.dispatchExternal(
+        { type: DEV_BUILD_PRESENCE_MESSAGE },
+        { id: "unknown-dev-build" },
+      ),
+    ).toEqual({ listenerResult: false, response: undefined });
+  });
+
+  it("dev accepts forwarded commands only from known production IDs", async () => {
+    const onForwardedCommand = vi.fn(() => Promise.resolve(true));
+    installDuplicateRuntime({
+      api: harness.api,
+      isDev: true,
+      onForwardedCommand,
+    });
+
+    expect(
+      harness.dispatchExternal(
+        {
+          type: FORWARD_COMMAND_MESSAGE,
+          command: "select-picture-in-picture-video",
+        },
+        { id: "unknown-prod-build" },
+      ),
+    ).toEqual({ listenerResult: false, response: undefined });
+    expect(onForwardedCommand).not.toHaveBeenCalled();
+
+    const result = harness.dispatchExternal(
+      {
+        type: FORWARD_COMMAND_MESSAGE,
+        command: "select-picture-in-picture-video",
+      },
+      { id: CHROMIUM_LOCAL_PROD_EXTENSION_ID },
+    );
+
+    expect(result).toEqual({ listenerResult: true, response: undefined });
+    await Promise.resolve();
+    expect(result.response).toEqual({ ok: true });
+    expect(onForwardedCommand).toHaveBeenCalledWith(
+      "select-picture-in-picture-video",
+    );
+  });
+
+  it("dev reports forwarded commands rejected when the handler declines them", () => {
+    installDuplicateRuntime({
+      api: harness.api,
+      isDev: true,
+      onForwardedCommand: () => false,
+    });
+
+    expect(
+      harness.dispatchExternal(
+        { type: FORWARD_COMMAND_MESSAGE, command: "unknown-command" },
+        { id: CHROMIUM_LOCAL_PROD_EXTENSION_ID },
+      ),
+    ).toEqual({ listenerResult: false, response: { ok: false } });
+  });
+
+  it("forwards commands to the fixed local dev ID", async () => {
+    harness.externalDevResponds = true;
+
+    await expect(
+      forwardCommandToDevBuild(
+        harness.api.runtime,
+        "toggle-picture-in-picture",
+      ),
+    ).resolves.toBe(true);
+    expect(harness.sentMessages).toContainEqual({
+      extensionId: CHROMIUM_DEV_EXTENSION_ID,
+      message: {
+        type: FORWARD_COMMAND_MESSAGE,
+        command: "toggle-picture-in-picture",
+      },
+    });
+  });
+
+  it("reports command forwarding failure when dev is absent", async () => {
+    await expect(
+      forwardCommandToDevBuild(
+        harness.api.runtime,
+        "toggle-picture-in-picture",
+      ),
+    ).resolves.toBe(false);
+  });
 });
 
 function createHarness() {
@@ -195,9 +287,28 @@ function createHarness() {
     });
   }
 
+  function dispatchExternal(
+    message: unknown,
+    sender: chrome.runtime.MessageSender,
+  ): { listenerResult: boolean | void; response: unknown } {
+    const result: { listenerResult: boolean | void; response: unknown } = {
+      listenerResult: undefined,
+      response: undefined,
+    };
+    result.listenerResult = externalMessageListener(
+      message,
+      sender,
+      (value) => {
+        result.response = value;
+      },
+    );
+    return result;
+  }
+
   return {
     action,
     api,
+    dispatchExternal,
     get externalDevResponds() {
       return externalDevResponds;
     },
