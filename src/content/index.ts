@@ -20,8 +20,10 @@ import {
 } from "@/core/settings";
 import { createRuntimeCoordinator } from "@/core/runtime-coordinator";
 import {
+  PAGE_FORWARD_COMMAND_EVENT,
   RUNTIME_STATE_MESSAGE,
   isContentDuplicateStatusRequestMessage,
+  isPageForwardCommandDetail,
 } from "@/core/runtime-messages";
 import overlayIconSvg from "@/assets/overlay-icon.svg?raw";
 
@@ -38,8 +40,6 @@ const INJECTED_SCRIPT_ID = `ultimate-pip-unblocker-${RUNTIME_KIND}`;
 const CONFIG_EVENT = `ultimate-pip.configure.${RUNTIME_KIND}`;
 const DIAGNOSTIC_EVENT = `ultimate-pip.diagnostic.${RUNTIME_KIND}`;
 const GLOBAL_RUNTIME_KEY = `__pipAnywhereContentRuntime_${RUNTIME_KIND}`;
-const LOCAL_HOTKEY_GUARD_KEY = "__pipAnywhereLastLocalHotkeyAt";
-const LOCAL_HOTKEY_GUARD_MS = 1200;
 
 interface DiagnosticsState {
   videosObserved: number;
@@ -404,20 +404,6 @@ function scheduleOverlayIdleHide(): void {
 
 function noteOverlayActivity(): void {
   if (overlay?.dataset.visible === "true") scheduleOverlayIdleHide();
-}
-
-function markLocalHotkeyHandled(): void {
-  (globalThis as Record<string, unknown>)[LOCAL_HOTKEY_GUARD_KEY] = Date.now();
-}
-
-function wasLocalHotkeyRecentlyHandled(): boolean {
-  const lastHandled = (globalThis as Record<string, unknown>)[
-    LOCAL_HOTKEY_GUARD_KEY
-  ];
-  return (
-    typeof lastHandled === "number" &&
-    Date.now() - lastHandled < LOCAL_HOTKEY_GUARD_MS
-  );
 }
 
 function positionOverlay(video: HTMLVideoElement): void {
@@ -794,39 +780,23 @@ function handleDocumentPointerDown(event: PointerEvent): void {
 function handleDocumentKeyDown(event: KeyboardEvent): void {
   if (event.key === "Escape") {
     clearVideoSelection();
+  }
+}
+
+function handlePageForwardedCommand(event: Event): void {
+  if (!__DEV__ || !(event instanceof CustomEvent)) return;
+  if (!isPageForwardCommandDetail(event.detail)) return;
+
+  if (event.detail.command === "select-picture-in-picture-video") {
+    startVideoSelection();
     return;
   }
-
-  if (!isDefaultLocalHotkey(event) || isEditableTarget(event.target)) return;
-  markLocalHotkeyHandled();
-  event.preventDefault();
-  event.stopPropagation();
-  void triggerPiP(findBestVideo());
-}
-
-function isDefaultLocalHotkey(event: KeyboardEvent): boolean {
-  return (
-    event.altKey &&
-    event.shiftKey &&
-    !event.ctrlKey &&
-    !event.metaKey &&
-    event.code === "KeyP"
-  );
-}
-
-function isEditableTarget(target: EventTarget | null): boolean {
-  if (!(target instanceof Element)) return false;
-  return Boolean(
-    target.closest(
-      [
-        "input",
-        "textarea",
-        "select",
-        '[contenteditable=""]',
-        '[contenteditable="true"]',
-      ].join(","),
-    ),
-  );
+  if (
+    event.detail.command === "_execute_action" ||
+    event.detail.command === "toggle-picture-in-picture"
+  ) {
+    void triggerPiP(findBestVideo());
+  }
 }
 
 function observeVideo(video: HTMLVideoElement): void {
@@ -1019,6 +989,15 @@ async function startContentRuntime(): Promise<void> {
     capture: true,
     signal: getRuntimeSignal(),
   });
+  if (__DEV__) {
+    window.addEventListener(
+      PAGE_FORWARD_COMMAND_EVENT,
+      handlePageForwardedCommand,
+      {
+        signal: getRuntimeSignal(),
+      },
+    );
+  }
 
   mutationObserver = new MutationObserver(handleMutations);
   mutationObserver.observe(document.documentElement, {
@@ -1062,10 +1041,6 @@ async function startContentRuntime(): Promise<void> {
       return false;
     }
     if (message?.type !== "ultimate-pip.toggle") return false;
-    if (wasLocalHotkeyRecentlyHandled()) {
-      sendResponse({ ok: true });
-      return false;
-    }
     void triggerPiP(findBestVideo()).then(sendResponse);
     return true;
   };

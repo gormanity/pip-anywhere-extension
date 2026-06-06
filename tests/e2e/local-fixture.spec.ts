@@ -282,51 +282,6 @@ test("enters native PiP from the hover overlay click", async () => {
     .toBe("eligible-video");
 });
 
-test("enters native PiP from the default page hotkey", async () => {
-  await page!.goto(`${server.origin}/pip-fixture.html`);
-  await expectVideoDuration("#eligible-video", 45);
-  await page!.locator("#eligible-video").click();
-  await page!.keyboard.press("Alt+Shift+P");
-
-  await expect
-    .poll(() =>
-      page!.evaluate(() => {
-        return document.pictureInPictureElement?.id ?? null;
-      }),
-    )
-    .toBe("eligible-video");
-});
-
-test("re-enters native PiP from the page hotkey without another click", async () => {
-  await page!.goto(`${server.origin}/pip-fixture.html`);
-  await expectVideoDuration("#eligible-video", 45);
-  await page!.locator("#eligible-video").click();
-  await page!.keyboard.press("Alt+Shift+P");
-  await expect
-    .poll(() =>
-      page!.evaluate(() => document.pictureInPictureElement?.id ?? null),
-    )
-    .toBe("eligible-video");
-
-  await page!.evaluate(async () => {
-    if (document.pictureInPictureElement) {
-      await document.exitPictureInPicture();
-    }
-  });
-  await expect
-    .poll(() =>
-      page!.evaluate(() => document.pictureInPictureElement?.id ?? null),
-    )
-    .toBeNull();
-
-  await page!.keyboard.press("Alt+Shift+P");
-  await expect
-    .poll(() =>
-      page!.evaluate(() => document.pictureInPictureElement?.id ?? null),
-    )
-    .toBe("eligible-video");
-});
-
 test("shows no-video feedback from an extension toggle message", async () => {
   await page!.goto(`${server.origin}/empty-fixture.html`);
   await sendToggleMessageToPage(`${server.origin}/empty-fixture.html`);
@@ -407,7 +362,7 @@ test("cancels explicit video selection from outside click and escape", async () 
 
 test("autosaves options page changes and shows status text", async () => {
   await page!.goto(`chrome-extension://${extensionId}/options.html`);
-  await page!.locator("#toolbar-auto-select-enabled").check();
+  await page!.locator("#hover-overlay-enabled").uncheck();
 
   await expect(page!.locator("#status")).toHaveText("Settings saved.");
   await expect(page!.locator("#status")).toBeInViewport();
@@ -415,18 +370,18 @@ test("autosaves options page changes and shows status text", async () => {
     .poll(() =>
       page!.evaluate(
         async (settingsKey) =>
-          new Promise<string>((resolve) => {
+          new Promise<boolean>((resolve) => {
             chrome.storage.sync.get([settingsKey], (result) => {
               const settings = result[settingsKey] as {
-                toolbarActionMode: string;
+                hoverOverlayEnabled: boolean;
               };
-              resolve(settings.toolbarActionMode);
+              resolve(settings.hoverOverlayEnabled);
             });
           }),
         "ultimatePip.settings",
       ),
     )
-    .toBe("auto");
+    .toBe(false);
 });
 
 test("manages disabled site rules with wildcard validation", async () => {
@@ -507,7 +462,6 @@ test("restores default options and persists them", async () => {
     overlayOpacityPercent: 55,
     overlaySizePx: 60,
     overlayIdleHideMs: 1000,
-    toolbarActionMode: "auto",
     unblockVideoPiP: false,
   });
 
@@ -524,7 +478,6 @@ test("restores default options and persists them", async () => {
   await expect(page!.locator("#overlay-opacity")).toHaveValue("86");
   await expect(page!.locator("#overlay-size")).toHaveValue("42");
   await expect(page!.locator("#overlay-idle-hide")).toHaveValue("3000");
-  await expect(page!.locator("#toolbar-auto-select-enabled")).not.toBeChecked();
   await expect(page!.locator("#hover-overlay-enabled")).toBeChecked();
   await expect(page!.locator("#unblock-video-pip")).toBeChecked();
 
@@ -539,7 +492,6 @@ test("restores default options and persists them", async () => {
       overlayOpacityPercent: 86,
       overlaySizePx: 42,
       overlayIdleHideMs: 3000,
-      toolbarActionMode: "choose",
       unblockVideoPiP: true,
     });
 });
@@ -635,7 +587,6 @@ async function setSettings(
         overlayOpacityPercent: 86,
         overlaySizePx: 42,
         overlayIdleHideMs: 3000,
-        toolbarActionMode: "choose",
         unblockVideoPiP: true,
         disabledSitePatterns: [],
         debugLogging: false,
@@ -723,7 +674,6 @@ interface TestSettings {
   overlayOpacityPercent: number;
   overlaySizePx: number;
   overlayIdleHideMs: number;
-  toolbarActionMode: "auto" | "choose";
   unblockVideoPiP: boolean;
   disabledSitePatterns: string[];
   debugLogging: boolean;

@@ -7,7 +7,7 @@ import {
 } from "@/core/settings";
 import { getBrowserApi } from "@/core/browser";
 
-const COMMAND_NAME = "toggle-picture-in-picture";
+const COMMAND_NAME = "_execute_action";
 const SELECT_COMMAND_NAME = "select-picture-in-picture-video";
 const SHORTCUT_FIELDS = [
   {
@@ -91,17 +91,6 @@ function initShortcutButton(): void {
   }
 }
 
-function readToolbarActionMode(): PipSettings["toolbarActionMode"] {
-  return byId<HTMLInputElement>("toolbar-auto-select-enabled").checked
-    ? "auto"
-    : "choose";
-}
-
-function writeToolbarActionMode(mode: PipSettings["toolbarActionMode"]): void {
-  byId<HTMLInputElement>("toolbar-auto-select-enabled").checked =
-    mode === "auto";
-}
-
 function readForm(): PipSettings {
   return {
     hoverOverlayEnabled: byId<HTMLInputElement>("hover-overlay-enabled")
@@ -123,7 +112,6 @@ function readForm(): PipSettings {
     overlayIdleHideMs: Number(
       byId<HTMLInputElement>("overlay-idle-hide").value,
     ),
-    toolbarActionMode: readToolbarActionMode(),
     unblockVideoPiP: byId<HTMLInputElement>("unblock-video-pip").checked,
     disabledSitePatterns: readSiteRules(),
     debugLogging: __DEV__
@@ -166,7 +154,6 @@ function writeForm(settings: PipSettings): void {
     settings.overlayIdleHideMs === 0
       ? "Off"
       : `${settings.overlayIdleHideMs} ms`;
-  writeToolbarActionMode(settings.toolbarActionMode);
   renderSiteRules(settings.disabledSitePatterns);
   byId<HTMLInputElement>("unblock-video-pip").checked =
     settings.unblockVideoPiP;

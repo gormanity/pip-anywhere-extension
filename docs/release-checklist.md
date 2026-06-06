@@ -98,8 +98,8 @@ Required Edge smoke targets:
 Confirm these manually because they are browser-managed and not reliable in
 headless automation:
 
-- extension toolbar icon highlights videos by default and follows the
-  auto-select toggle when enabled
+- extension toolbar icon toggles PiP for the best eligible video
 - configured auto-select keyboard shortcut toggles PiP on an eligible video page
+  before any page click
 - configured choose-video keyboard shortcut highlights eligible videos
 - options page shortcut fields reflect the assigned browser shortcuts

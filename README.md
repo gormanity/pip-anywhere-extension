@@ -8,15 +8,13 @@ unblocking.
 
 - Browser commands for auto-selecting the best active video or highlighting
   videos so you can choose the PiP target.
-- Toolbar action that highlights videos by default, with an option to
-  auto-select the best video.
+- Toolbar action that auto-selects the best video.
 - Hover overlay button for HTML5 video elements, with configurable placement,
   size, opacity, delay, idle hiding, and minimum video length.
 - Streaming site PiP unblocking, including Netflix and Disney+.
 - Best-effort clearing of video-level `disablePictureInPicture` blocks.
-- Options page for toolbar auto-select behavior, shortcut management,
-  import/export, per-site disable rules with wildcard support, PiP unblocking,
-  and dev-only debug logging.
+- Options page for shortcut management, import/export, per-site disable rules
+  with wildcard support, PiP unblocking, and dev-only debug logging.
 
 Browser-enforced site policies may still prevent PiP on some pages. The
 extension removes blocks it can control at the video element level.

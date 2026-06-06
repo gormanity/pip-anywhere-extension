@@ -15,10 +15,14 @@ export const DEV_BUILD_STALE_MS = 3500;
 
 export const CHROMIUM_LOCAL_PROD_EXTENSION_ID =
   "dakagfnbbijbflodaajdfgdiddgobjhl";
+export const CHROMIUM_CHROME_STORE_EXTENSION_ID =
+  "dednhhghjbmdondangkdfddfnfdlmihi";
 export const CHROMIUM_DEV_EXTENSION_ID = "cjodjanjoahbgiigloplfkiikoejgoge";
 export const CHROMIUM_PROD_EXTENSION_IDS = [
   CHROMIUM_LOCAL_PROD_EXTENSION_ID,
+  CHROMIUM_CHROME_STORE_EXTENSION_ID,
 ] as const;
+export const PAGE_FORWARD_COMMAND_EVENT = "pip-anywhere.forward-command.page";
 
 export type RuntimeStateMessage = {
   type: typeof RUNTIME_STATE_MESSAGE;
@@ -48,6 +52,13 @@ export type DevBuildPresenceRequestMessage = {
 export type ForwardCommandMessage = {
   type: typeof FORWARD_COMMAND_MESSAGE;
   command: string;
+};
+
+export type PageForwardCommandDetail = {
+  source: "pip-anywhere";
+  type: typeof PAGE_FORWARD_COMMAND_EVENT;
+  command: string;
+  version: 1;
 };
 
 export type DuplicateStatusResponse = {
@@ -122,5 +133,19 @@ export function isForwardCommandMessage(
     (message as Partial<ForwardCommandMessage>).type ===
       FORWARD_COMMAND_MESSAGE &&
     typeof (message as Partial<ForwardCommandMessage>).command === "string"
+  );
+}
+
+export function isPageForwardCommandDetail(
+  detail: unknown,
+): detail is PageForwardCommandDetail {
+  return (
+    typeof detail === "object" &&
+    detail !== null &&
+    (detail as Partial<PageForwardCommandDetail>).source === "pip-anywhere" &&
+    (detail as Partial<PageForwardCommandDetail>).type ===
+      PAGE_FORWARD_COMMAND_EVENT &&
+    (detail as Partial<PageForwardCommandDetail>).version === 1 &&
+    typeof (detail as Partial<PageForwardCommandDetail>).command === "string"
   );
 }

@@ -1,6 +1,7 @@
 import { createHash } from "node:crypto";
 import { describe, expect, it } from "vitest";
 import {
+  CHROMIUM_CHROME_STORE_EXTENSION_ID,
   CHROMIUM_DEV_EXTENSION_ID,
   CHROMIUM_LOCAL_PROD_EXTENSION_ID,
 } from "@/core/runtime-messages";
@@ -24,11 +25,10 @@ function extensionIdFromKey(key: string): string {
 function manifestWithCommands(): Record<string, unknown> {
   return {
     commands: {
-      "toggle-picture-in-picture": {
+      _execute_action: {
         suggested_key: {
           default: "Alt+Shift+P",
         },
-        description: "Toggle picture-in-picture for the best active video",
       },
       "select-picture-in-picture-video": {
         suggested_key: {
@@ -69,7 +69,10 @@ describe("Chromium coexistence manifest fields", () => {
     expect(devManifest).toMatchObject({
       key: CHROMIUM_DEV_KEY,
       externally_connectable: {
-        ids: [CHROMIUM_LOCAL_PROD_EXTENSION_ID],
+        ids: [
+          CHROMIUM_LOCAL_PROD_EXTENSION_ID,
+          CHROMIUM_CHROME_STORE_EXTENSION_ID,
+        ],
       },
     });
   });
@@ -82,7 +85,7 @@ describe("Chromium coexistence manifest fields", () => {
     applyChromiumCoexistenceManifestFields(edgeManifest, "edge", true);
 
     expect(chromeManifest.commands).not.toMatchObject({
-      "toggle-picture-in-picture": {
+      _execute_action: {
         suggested_key: expect.anything(),
       },
       "select-picture-in-picture-video": {
@@ -90,7 +93,7 @@ describe("Chromium coexistence manifest fields", () => {
       },
     });
     expect(edgeManifest.commands).not.toMatchObject({
-      "toggle-picture-in-picture": {
+      _execute_action: {
         suggested_key: expect.anything(),
       },
       "select-picture-in-picture-video": {
@@ -105,7 +108,7 @@ describe("Chromium coexistence manifest fields", () => {
     applyChromiumCoexistenceManifestFields(manifest, "chrome", false);
 
     expect(manifest.commands).toMatchObject({
-      "toggle-picture-in-picture": {
+      _execute_action: {
         suggested_key: {
           default: "Alt+Shift+P",
         },

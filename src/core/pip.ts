@@ -41,6 +41,31 @@ export function enableVideoPiP(video: HTMLVideoElement): void {
   video.removeAttribute("controlslist");
 }
 
+function restoreFocusAfterPiPExit(video: HTMLVideoElement): void {
+  try {
+    window.focus();
+  } catch {
+    // Some embedded frames cannot take focus back after PiP closes.
+  }
+
+  try {
+    const hadTabIndex = video.hasAttribute("tabindex");
+    const previousTabIndex = video.getAttribute("tabindex");
+    if (!hadTabIndex) video.setAttribute("tabindex", "-1");
+    try {
+      video.focus({ preventScroll: true });
+    } finally {
+      if (hadTabIndex && previousTabIndex !== null) {
+        video.setAttribute("tabindex", previousTabIndex);
+      } else {
+        video.removeAttribute("tabindex");
+      }
+    }
+  } catch {
+    // Focus restoration is best effort; the PiP state already changed.
+  }
+}
+
 export async function togglePictureInPicture(
   video = findBestVideo(),
 ): Promise<PipResult> {
@@ -61,6 +86,7 @@ export async function togglePictureInPicture(
   try {
     if (document.pictureInPictureElement === video) {
       await document.exitPictureInPicture();
+      restoreFocusAfterPiPExit(video);
     } else {
       await video.requestPictureInPicture();
     }

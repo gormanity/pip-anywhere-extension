@@ -1,18 +1,13 @@
 import { getBrowserApi } from "@/core/browser";
 import {
+  LEGACY_TOGGLE_COMMAND,
   SELECT_COMMAND,
   TOGGLE_COMMAND,
   routeBrowserCommand,
   type BrowserCommandName,
 } from "./browser-commands";
-import {
-  DEFAULT_SETTINGS,
-  ensureDefaultSettings,
-  loadSettings,
-  normalizeSettings,
-  SETTINGS_KEY,
-  type ToolbarActionMode,
-} from "@/core/settings";
+import { ensureDefaultSettings } from "@/core/settings";
+import { PAGE_FORWARD_COMMAND_EVENT } from "@/core/runtime-messages";
 import {
   forwardCommandToDevBuild,
   installDuplicateRuntime,
@@ -23,13 +18,12 @@ const TOGGLE_MESSAGE = { type: "ultimate-pip.toggle" };
 const SELECT_MESSAGE = { type: "ultimate-pip.select-video" };
 const UNSCRIPTABLE_URL_PATTERN =
   /^(about|chrome|chrome-extension|edge|moz-extension):/i;
+const PAGE_FORWARD_COMMAND_SOURCE = "pip-anywhere";
 const duplicateRuntime = installDuplicateRuntime({
   api,
   isDev: __DEV__,
   onForwardedCommand: handleForwardedBrowserCommand,
 });
-let toolbarActionMode: ToolbarActionMode = DEFAULT_SETTINGS.toolbarActionMode;
-let toolbarActionModeReady: Promise<void> = Promise.resolve();
 
 interface FrameVideoCandidate {
   hasVideo: boolean;
@@ -47,6 +41,8 @@ interface DirectPipResult {
   message?: string;
   score: number;
 }
+
+type DirectToggleWorld = "ISOLATED" | "MAIN";
 
 function scoreVideosInFrame(): FrameVideoCandidate {
   const videos = Array.from(document.querySelectorAll("video"));
@@ -75,16 +71,6 @@ function scoreVideosInFrame(): FrameVideoCandidate {
 }
 
 async function directTogglePiPInFrame(): Promise<DirectPipResult> {
-  const localHotkeyHandledAt = (globalThis as Record<string, unknown>)[
-    "__pipAnywhereLastLocalHotkeyAt"
-  ];
-  if (
-    typeof localHotkeyHandledAt === "number" &&
-    Date.now() - localHotkeyHandledAt < 1200
-  ) {
-    return { ok: true, score: Number.MAX_SAFE_INTEGER };
-  }
-
   function scoreVideo(video: HTMLVideoElement): number {
     const rect = video.getBoundingClientRect();
     const visibleArea = Math.max(0, rect.width) * Math.max(0, rect.height);
@@ -114,6 +100,31 @@ async function directTogglePiPInFrame(): Promise<DirectPipResult> {
     return { ok: false, reason: "unsupported", score };
   }
 
+  function restoreFocusAfterPiPExit(video: HTMLVideoElement): void {
+    try {
+      window.focus();
+    } catch {
+      // Some embedded frames cannot take focus back after PiP closes.
+    }
+
+    try {
+      const hadTabIndex = video.hasAttribute("tabindex");
+      const previousTabIndex = video.getAttribute("tabindex");
+      if (!hadTabIndex) video.setAttribute("tabindex", "-1");
+      try {
+        video.focus({ preventScroll: true });
+      } finally {
+        if (hadTabIndex && previousTabIndex !== null) {
+          video.setAttribute("tabindex", previousTabIndex);
+        } else {
+          video.removeAttribute("tabindex");
+        }
+      }
+    } catch {
+      // Focus restoration is best effort; the PiP state already changed.
+    }
+  }
+
   video.disablePictureInPicture = false;
   video.removeAttribute("disablepictureinpicture");
   video.removeAttribute("controlslist");
@@ -128,6 +139,7 @@ async function directTogglePiPInFrame(): Promise<DirectPipResult> {
   try {
     if (document.pictureInPictureElement === video) {
       await document.exitPictureInPicture();
+      restoreFocusAfterPiPExit(video);
     } else {
       await video.requestPictureInPicture();
     }
@@ -155,13 +167,88 @@ async function findBestFrameId(tabId: number): Promise<number | undefined> {
   return best?.frameId;
 }
 
-async function directToggleInBestFrame(tabId: number): Promise<boolean> {
-  const results = (await api.scripting.executeScript({
+async function executeDirectToggleInFrames(
+  tabId: number,
+  world?: DirectToggleWorld,
+): Promise<chrome.scripting.InjectionResult<DirectPipResult>[]> {
+  const injection = {
     target: { tabId, allFrames: true },
     func: directTogglePiPInFrame,
-  })) as chrome.scripting.InjectionResult<DirectPipResult>[];
+  };
+  if (world) {
+    Object.assign(injection, { world });
+  }
 
+  return (await api.scripting.executeScript(
+    injection,
+  )) as chrome.scripting.InjectionResult<DirectPipResult>[];
+}
+
+function hasSuccessfulDirectToggle(
+  results: chrome.scripting.InjectionResult<DirectPipResult>[],
+): boolean {
   return results.some((result) => result.result?.ok);
+}
+
+function dispatchPageForwardedCommand(command: string): boolean {
+  window.dispatchEvent(
+    new CustomEvent(PAGE_FORWARD_COMMAND_EVENT, {
+      detail: {
+        source: PAGE_FORWARD_COMMAND_SOURCE,
+        type: PAGE_FORWARD_COMMAND_EVENT,
+        command,
+        version: 1,
+      },
+    }),
+  );
+  return true;
+}
+
+async function directToggleInBestFrame(tabId: number): Promise<boolean> {
+  const isolatedResults = await executeDirectToggleInFrames(tabId);
+  if (hasSuccessfulDirectToggle(isolatedResults)) return true;
+
+  const mainWorldResults = await executeDirectToggleInFrames(
+    tabId,
+    "MAIN",
+  ).catch(() => []);
+  return hasSuccessfulDirectToggle(mainWorldResults);
+}
+
+async function forwardCommandToDevContent(
+  command: BrowserCommandName,
+  tab?: chrome.tabs.Tab,
+): Promise<boolean> {
+  tab ??= await getActiveTab();
+  if (!tab?.id || !isScriptableTab(tab)) return false;
+
+  const frameId = await findBestFrameId(tab.id).catch(() => undefined);
+  const target =
+    frameId === undefined
+      ? { tabId: tab.id, allFrames: true }
+      : { tabId: tab.id, frameIds: [frameId] };
+
+  const results = await api.scripting.executeScript<[string], boolean>({
+    target,
+    func: dispatchPageForwardedCommand,
+    args: [command],
+  });
+  return results.some((result) => result.result === true);
+}
+
+async function forwardBrowserCommandToDev(
+  command: BrowserCommandName,
+  tab?: chrome.tabs.Tab,
+): Promise<boolean> {
+  if (command === TOGGLE_COMMAND || command === LEGACY_TOGGLE_COMMAND) {
+    const forwardedToContent = await forwardCommandToDevContent(
+      command,
+      tab,
+    ).catch(() => false);
+    if (forwardedToContent) return true;
+  }
+
+  return await forwardCommandToDevBuild(api.runtime, command);
 }
 
 async function sendToggleToFrame(
@@ -230,7 +317,7 @@ async function dispatchBrowserCommand(
   command: BrowserCommandName,
   tab?: chrome.tabs.Tab,
 ): Promise<void> {
-  if (command === TOGGLE_COMMAND) {
+  if (command === TOGGLE_COMMAND || command === LEGACY_TOGGLE_COMMAND) {
     await sendToggleToTab(tab);
     return;
   }
@@ -248,8 +335,7 @@ async function handleBrowserCommand(
     tab,
     isDev: __DEV__,
     duplicateRuntime,
-    forwardCommand: (forwardedCommand) =>
-      forwardCommandToDevBuild(api.runtime, forwardedCommand),
+    forwardCommand: forwardBrowserCommandToDev,
     dispatchCommand: dispatchBrowserCommand,
   });
 }
@@ -264,21 +350,8 @@ async function handleForwardedBrowserCommand(
   return handled;
 }
 
-async function refreshToolbarActionMode(): Promise<void> {
-  toolbarActionMode = (await loadSettings()).toolbarActionMode;
-}
-
-function queueToolbarActionModeRefresh(): void {
-  toolbarActionModeReady = refreshToolbarActionMode().catch(() => undefined);
-}
-
 async function runToolbarAction(tab?: chrome.tabs.Tab): Promise<void> {
-  await toolbarActionModeReady;
-  if (toolbarActionMode === "auto") {
-    void sendToggleToTab(tab);
-  } else {
-    void sendSelectToTab(tab);
-  }
+  await handleBrowserCommand(TOGGLE_COMMAND, tab);
 }
 
 function isScriptableTab(tab: chrome.tabs.Tab): tab is chrome.tabs.Tab & {
@@ -305,7 +378,6 @@ async function injectContentIntoOpenTabs(): Promise<void> {
 
 api.runtime.onInstalled.addListener((details) => {
   void ensureDefaultSettings();
-  queueToolbarActionModeRefresh();
   void injectContentIntoOpenTabs();
   if (details.reason === "install") {
     void api.runtime.openOptionsPage();
@@ -314,15 +386,7 @@ api.runtime.onInstalled.addListener((details) => {
 
 api.runtime.onStartup.addListener(() => {
   void ensureDefaultSettings();
-  queueToolbarActionModeRefresh();
   void injectContentIntoOpenTabs();
-});
-
-api.storage.onChanged.addListener((changes, areaName) => {
-  if (areaName !== "sync" || !changes[SETTINGS_KEY]) return;
-  toolbarActionMode = normalizeSettings(
-    changes[SETTINGS_KEY].newValue,
-  ).toolbarActionMode;
 });
 
 api.commands.onCommand.addListener((command, tab) => {
@@ -332,5 +396,3 @@ api.commands.onCommand.addListener((command, tab) => {
 api.action.onClicked.addListener((tab) => {
   void runToolbarAction(tab);
 });
-
-queueToolbarActionModeRefresh();

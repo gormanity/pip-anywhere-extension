@@ -3,24 +3,26 @@
 ## Dev/Prod Coexistence Details
 
 PiP Anywhere coordinates the browser-extension runtime and the page content
-runtime so a local dev build can be installed beside a local prod build. When
-both are active, dev wins and prod becomes duplicate-disabled.
+runtime so a local dev build can be installed beside a prod build. When both are
+active, dev wins and prod becomes duplicate-disabled.
 
 The mechanism is deliberately local and permission-light:
 
 - No `management` permission is used.
 - Extension IDs come from build-time manifest keys.
 - The only cross-extension surface is `externally_connectable`, restricted to
-  the expected counterpart ID.
+  the expected counterpart IDs.
 - Local prod accepts presence only from local dev.
-- Local dev accepts presence probes only from local prod.
+- Local dev accepts presence probes and forwarded commands only from known prod
+  IDs.
 
 Chrome IDs:
 
-| Build      | ID                                 | Folder loaded locally |
-| ---------- | ---------------------------------- | --------------------- |
-| Local prod | `dakagfnbbijbflodaajdfgdiddgobjhl` | `dist/chrome`         |
-| Local dev  | `cjodjanjoahbgiigloplfkiikoejgoge` | `dist-dev/chrome`     |
+| Build             | ID                                 | Folder loaded locally |
+| ----------------- | ---------------------------------- | --------------------- |
+| Chrome store prod | `dednhhghjbmdondangkdfddfnfdlmihi` | n/a                   |
+| Local prod        | `dakagfnbbijbflodaajdfgdiddgobjhl` | `dist/chrome`         |
+| Local dev         | `cjodjanjoahbgiigloplfkiikoejgoge` | `dist-dev/chrome`     |
 
 Timing:
 
@@ -40,12 +42,14 @@ Runtime coordination happens in two places:
 - The dev background accepts forwarded browser commands only from known prod IDs
   and dispatches the same internal command path used by its own browser command
   listener.
+- For duplicate-disabled prod action toggles, prod first relays a page-local
+  command event into dev content so PiP can run from the active tab path.
 - The dev content runtime posts a page-local heartbeat so prod content can
   suspend on already-open video pages.
 
 When prod is duplicate-disabled, the action icon switches to an OFF state and
 the badge reads `OFF`. Without dev, prod keeps its normal action behavior and
-the toolbar click starts video selection.
+the toolbar click toggles PiP for the best eligible video.
 
 Chromium dev manifests keep the command declarations but remove every
 `suggested_key`, so Chrome sync keeps the normal shortcuts assigned to prod.

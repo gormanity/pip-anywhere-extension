@@ -24,7 +24,7 @@ Use it as the one PiP extension for opening and customizing HTML5 video. Trigger
 
 FEATURES
 
-• Open PiP your way — use the hover button, browser-managed auto-select shortcut, highlighted-selection shortcut, or extension toolbar action
+• Open PiP your way — use the hover button, browser-managed auto-select shortcut, toolbar action, or highlighted-selection shortcut
 • Pick the right video — highlight page videos and choose the exact target
 • Tune the controls — adjust hover delay, button size, opacity, placement, idle hiding, preview suppression, and minimum video length
 • Best-effort unblocking — helps when sites hide or disable video-level PiP and browser policy allows
@@ -58,8 +58,8 @@ Source code: https://github.com/gormanity/pip-anywhere-extension`,
     verification: [
       "Load any page with an HTML5 video, such as a normal YouTube watch page, then hover the video to see the PiP overlay button.",
       "Click the hover overlay button to request native picture-in-picture for that video.",
-      "Click the extension toolbar icon on a video page to highlight eligible videos; enable toolbar auto-select in options to target the best video instead.",
-      "Open the options page to adjust toolbar auto-select, browser-managed shortcuts, hover delay, minimum video length, drag-based overlay placement, hover icon size, hover icon opacity, idle hiding, per-site disable rules, settings import/export, and video-level unblocking.",
+      "Click the extension toolbar icon on a video page to target the best eligible video.",
+      "Open the options page to adjust browser-managed shortcuts, hover delay, minimum video length, drag-based overlay placement, hover icon size, hover icon opacity, idle hiding, per-site disable rules, settings import/export, and video-level unblocking.",
       "The extension uses `chrome.storage.sync` only for user preferences.",
       "The extension does not use remote code, external services, analytics, tracking, accounts, or network requests.",
       "The content script only detects and modifies local HTML5 video elements needed for PiP controls; it does not collect page text, video content, browsing history, form data, cookies, or account information.",
@@ -91,7 +91,7 @@ Source code: https://github.com/gormanity/pip-anywhere-extension`,
       {
         permission: "`storage`",
         justification:
-          "Stores user preferences such as toolbar auto-select behavior, hover delay, overlay placement, hover icon size, hover icon opacity, minimum video length, site disable rules, and PiP unblocking behavior using browser sync storage.",
+          "Stores user preferences such as hover delay, overlay placement, hover icon size, hover icon opacity, minimum video length, site disable rules, and PiP unblocking behavior using browser sync storage.",
       },
       {
         permission: "Host permission: `<all_urls>`",

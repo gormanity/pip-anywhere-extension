@@ -1,9 +1,11 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { TOGGLE_COMMAND } from "@/background/browser-commands";
 import {
   forwardCommandToDevBuild,
   installDuplicateRuntime,
 } from "@/background/duplicate-runtime";
 import {
+  CHROMIUM_CHROME_STORE_EXTENSION_ID,
   CHROMIUM_DEV_EXTENSION_ID,
   CHROMIUM_LOCAL_PROD_EXTENSION_ID,
   DEV_BUILD_PRESENCE_MESSAGE,
@@ -153,6 +155,21 @@ describe("background duplicate runtime", () => {
     expect(onForwardedCommand).toHaveBeenCalledWith(
       "select-picture-in-picture-video",
     );
+
+    const storeResult = harness.dispatchExternal(
+      {
+        type: FORWARD_COMMAND_MESSAGE,
+        command: "toggle-picture-in-picture",
+      },
+      { id: CHROMIUM_CHROME_STORE_EXTENSION_ID },
+    );
+
+    expect(storeResult).toEqual({ listenerResult: true, response: undefined });
+    await Promise.resolve();
+    expect(storeResult.response).toEqual({ ok: true });
+    expect(onForwardedCommand).toHaveBeenCalledWith(
+      "toggle-picture-in-picture",
+    );
   });
 
   it("dev reports forwarded commands rejected when the handler declines them", () => {
@@ -174,26 +191,20 @@ describe("background duplicate runtime", () => {
     harness.externalDevResponds = true;
 
     await expect(
-      forwardCommandToDevBuild(
-        harness.api.runtime,
-        "toggle-picture-in-picture",
-      ),
+      forwardCommandToDevBuild(harness.api.runtime, TOGGLE_COMMAND),
     ).resolves.toBe(true);
     expect(harness.sentMessages).toContainEqual({
       extensionId: CHROMIUM_DEV_EXTENSION_ID,
       message: {
         type: FORWARD_COMMAND_MESSAGE,
-        command: "toggle-picture-in-picture",
+        command: TOGGLE_COMMAND,
       },
     });
   });
 
   it("reports command forwarding failure when dev is absent", async () => {
     await expect(
-      forwardCommandToDevBuild(
-        harness.api.runtime,
-        "toggle-picture-in-picture",
-      ),
+      forwardCommandToDevBuild(harness.api.runtime, TOGGLE_COMMAND),
     ).resolves.toBe(false);
   });
 });

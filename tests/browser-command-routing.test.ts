@@ -16,12 +16,14 @@ describe("browser command routing", () => {
     tab?: chrome.tabs.Tab;
   }>;
   let forwardedCommands: BrowserCommandName[];
+  let forwardedTabs: Array<chrome.tabs.Tab | undefined>;
   let forwardResult: boolean;
 
   beforeEach(() => {
     duplicateDisabled = false;
     dispatchedCommands = [];
     forwardedCommands = [];
+    forwardedTabs = [];
     forwardResult = true;
     duplicateRuntime = {
       isDuplicateDisabled: vi.fn(() => duplicateDisabled),
@@ -36,17 +38,23 @@ describe("browser command routing", () => {
     dispatchedCommands.push({ command, tab });
   }
 
-  async function forwardCommand(command: BrowserCommandName): Promise<boolean> {
+  async function forwardCommand(
+    command: BrowserCommandName,
+    tab?: chrome.tabs.Tab,
+  ): Promise<boolean> {
     forwardedCommands.push(command);
+    forwardedTabs.push(tab);
     return forwardResult;
   }
 
   it("forwards prod commands only while duplicate-disabled", async () => {
     duplicateDisabled = true;
+    const tab = { id: 123 } as chrome.tabs.Tab;
 
     await expect(
       routeBrowserCommand({
         command: TOGGLE_COMMAND,
+        tab,
         isDev: false,
         duplicateRuntime,
         dispatchCommand,
@@ -54,8 +62,9 @@ describe("browser command routing", () => {
       }),
     ).resolves.toBe(true);
 
-    expect(duplicateRuntime.probeDevBuildPresence).toHaveBeenCalledOnce();
+    expect(duplicateRuntime.probeDevBuildPresence).not.toHaveBeenCalled();
     expect(forwardedCommands).toEqual([TOGGLE_COMMAND]);
+    expect(forwardedTabs).toEqual([tab]);
     expect(dispatchedCommands).toEqual([]);
   });
 
@@ -70,9 +79,32 @@ describe("browser command routing", () => {
       }),
     ).resolves.toBe(true);
 
+    expect(duplicateRuntime.probeDevBuildPresence).toHaveBeenCalledOnce();
     expect(forwardedCommands).toEqual([]);
     expect(dispatchedCommands).toEqual([
       { command: SELECT_COMMAND, tab: undefined },
+    ]);
+  });
+
+  it("dispatches active prod toggles without waiting for a dev probe", async () => {
+    duplicateRuntime.probeDevBuildPresence = vi.fn(
+      () => new Promise<void>(() => undefined),
+    );
+
+    await expect(
+      routeBrowserCommand({
+        command: TOGGLE_COMMAND,
+        isDev: false,
+        duplicateRuntime,
+        dispatchCommand,
+        forwardCommand,
+      }),
+    ).resolves.toBe(true);
+
+    expect(duplicateRuntime.probeDevBuildPresence).toHaveBeenCalledOnce();
+    expect(forwardedCommands).toEqual([]);
+    expect(dispatchedCommands).toEqual([
+      { command: TOGGLE_COMMAND, tab: undefined },
     ]);
   });
 
@@ -90,6 +122,7 @@ describe("browser command routing", () => {
       }),
     ).resolves.toBe(false);
 
+    expect(duplicateRuntime.probeDevBuildPresence).not.toHaveBeenCalled();
     expect(forwardedCommands).toEqual([TOGGLE_COMMAND]);
     expect(dispatchedCommands).toEqual([]);
   });

@@ -10,7 +10,6 @@ import {
   isSiteDisabled,
   normalizeOverlayCorner,
   normalizeSettings,
-  normalizeToolbarActionMode,
   sitePatternMatches,
 } from "@/core/settings";
 
@@ -43,9 +42,6 @@ describe("settings normalization", () => {
     expect(clampOverlayOpacity(101)).toBe(100);
     expect(clampOverlaySize(20)).toBe(28);
     expect(clampOverlaySize(90)).toBe(72);
-    expect(normalizeToolbarActionMode("auto")).toBe("auto");
-    expect(normalizeToolbarActionMode("choose")).toBe("choose");
-    expect(normalizeToolbarActionMode("other")).toBe("choose");
   });
 
   it("preserves valid boolean settings", () => {
@@ -59,7 +55,6 @@ describe("settings normalization", () => {
         overlayOpacityPercent: 60,
         overlaySizePx: 52,
         overlayIdleHideMs: 3000,
-        toolbarActionMode: "auto",
         unblockVideoPiP: false,
         disabledSitePatterns: ["example.com", "*player*"],
         debugLogging: true,
@@ -73,7 +68,6 @@ describe("settings normalization", () => {
       overlayOpacityPercent: 60,
       overlaySizePx: 52,
       overlayIdleHideMs: 3000,
-      toolbarActionMode: "auto",
       unblockVideoPiP: false,
       disabledSitePatterns: ["example.com", "*player*"],
       debugLogging: __DEV__,
