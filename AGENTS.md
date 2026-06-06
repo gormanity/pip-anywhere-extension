@@ -147,6 +147,8 @@ The project uses Vite with one config per browser and shared build logic in
   `git push --tags`.
 - Verify the `Release` workflow completes successfully and that the GitHub
   release contains Chrome and Edge zip assets for the new version.
+- After verification, give the user the direct GitHub release link:
+  `https://github.com/gormanity/pip-anywhere-extension/releases/tag/v<version>`.
 - Review `store/` listing copy, generated listing files, screenshots, promo
   images, and `store/privacy-policy.md` for release accuracy, browser-store
   fit, and user value before store submission.

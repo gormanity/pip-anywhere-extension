@@ -54,6 +54,9 @@ the release contains:
 - `ultimate-pip-<version>-chrome.zip`
 - `ultimate-pip-<version>-edge.zip`
 
+After verification, give the user the direct GitHub release link:
+`https://github.com/gormanity/pip-anywhere-extension/releases/tag/v<version>`.
+
 Draft release notes from the end-user perspective for manual approval before
 publishing or updating notes. Focus on user-visible changes and improvements,
 not implementation details.
