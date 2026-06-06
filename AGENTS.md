@@ -42,7 +42,9 @@ dist-dev/           # development build output, git-ignored
 
 ## VCS
 
-- Use `jj` exclusively for version-control operations.
+- Use `jj` exclusively for version-control operations, except for the final
+  tag-only `git push origin refs/tags/v<version>:refs/tags/v<version>` release
+  step. This `jj` version can track tags but refuses to create new remote tags.
 - Make changes atomic and tightly scoped.
 - Run `jj status` before starting a new unit of work.
 - If the current change already has unrelated content, create a new change with
@@ -51,6 +53,10 @@ dist-dev/           # development build output, git-ignored
 - Use commit messages in the form `type: summary`. For breaking changes, use
   `type!: summary`.
 - Do not push until the feature is complete and checks pass.
+- Before every push, run the CI-equivalent local checks for the work being
+  published.
+- After every push, verify the corresponding GitHub Actions run completed
+  successfully.
 
 ## Commands
 
@@ -115,6 +121,39 @@ The project uses Vite with one config per browser and shared build logic in
   behavior matters. Keep those tests on local fixtures, not third-party sites.
 - Keep third-party site coverage in `docs/manual-smoke.md`.
 - Run `pnpm run check` before considering a feature complete.
+
+## Release Process
+
+- In this repo, "cut a release" means creating a new semantic version. Do not
+  move or rebuild an existing `v*` tag unless the user explicitly asks for a
+  rebuild.
+- Bump the version in `package.json`; manifest versions are injected from that
+  value at build time.
+- Keep the version bump in its own commit, normally as a child of the release
+  source commit. If the current working copy has unrelated changes, create a
+  separate jj change or workspace before editing.
+- Run `pnpm run check`, `pnpm run package`, and `pnpm run build:listings`
+  locally before tagging. Confirm the generated zip filenames use the new
+  version.
+- If screenshots, promo images, or listing visuals changed, run
+  `pnpm run render:store-assets` and review the generated store assets.
+- Push the version-bump commit first with
+  `jj bookmark set main -r <version-bump-revision>` and
+  `jj git push --bookmark main`; verify CI is green before tagging.
+- Create the release tag on the version-bump commit:
+  `jj tag set v<version> -r <revision>`.
+- Export refs if needed, then push exactly the new tag:
+  `git push origin refs/tags/v<version>:refs/tags/v<version>`. Do not use
+  `git push --tags`.
+- Verify the `Release` workflow completes successfully and that the GitHub
+  release contains Chrome and Edge zip assets for the new version.
+- Review `store/` listing copy, generated listing files, screenshots, promo
+  images, and `store/privacy-policy.md` for release accuracy, browser-store
+  fit, and user value before store submission.
+- Draft release notes from the end-user perspective for manual approval before
+  publishing or updating release notes. Focus on user-visible changes and
+  improvements; avoid internal implementation details and known-limitations
+  boilerplate unless the user asks for it.
 
 ## Pitfalls
 

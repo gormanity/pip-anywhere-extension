@@ -1,5 +1,28 @@
 # Release Checklist
 
+Cutting a release means publishing a new semantic version. Do not move or
+rebuild an existing `v*` tag unless the user explicitly asks for a rebuild.
+
+## Version Bump
+
+1. Start from the intended release source commit, not from unrelated local
+   working-copy changes.
+2. Bump `package.json` to the new version. This is the source of truth for
+   manifest versions at build time.
+3. Keep the version bump in its own commit:
+
+   ```bash
+   jj describe -m "chore: bump version to <version>"
+   ```
+
+4. Push the version-bump commit and verify the GitHub Actions CI run succeeds
+   before tagging:
+
+   ```bash
+   jj bookmark set main -r <version-bump-revision>
+   jj git push --bookmark main
+   ```
+
 ## Automated Checks
 
 1. Run `pnpm run check`.
@@ -8,17 +31,32 @@
 4. Confirm release artifacts exist:
    - `releases/ultimate-pip-<version>-chrome.zip`
    - `releases/ultimate-pip-<version>-edge.zip`
+5. If screenshots, promo images, or listing visuals changed, run
+   `pnpm run render:store-assets`.
 
 ## GitHub Release
 
 Pushing a `v*` tag runs `.github/workflows/release.yml`, reruns
 `pnpm run check`, packages Chrome and Edge zips, and publishes a GitHub release
-with generated notes.
+with generated notes. Push exactly the new tag; do not use `git push --tags`.
+This repository uses a tag-only Git push because the installed `jj` can track
+tags but does not create new remote tags through `jj git push`.
 
 ```bash
-jj tag set v<version> -r <revision>
-jj git push --tag v<version>
+jj tag set v<version> -r <version-bump-revision>
+jj git export
+git push origin refs/tags/v<version>:refs/tags/v<version>
 ```
+
+After the push, verify the `Release` workflow completes successfully and that
+the release contains:
+
+- `ultimate-pip-<version>-chrome.zip`
+- `ultimate-pip-<version>-edge.zip`
+
+Draft release notes from the end-user perspective for manual approval before
+publishing or updating notes. Focus on user-visible changes and improvements,
+not implementation details.
 
 ## Manual Smoke
 
@@ -49,6 +87,8 @@ Required Edge smoke targets:
 5. Use `store/privacy-policy.md` as the public privacy policy.
 6. Upload screenshots and promo images from `store/screenshots/` and
    `store/promo/` once final assets are generated.
+7. Review listing copy, screenshots, promo images, and privacy copy for release
+   accuracy, browser-store fit, and end-user value before submitting.
 
 ## Manual Browser-Managed Controls
 
